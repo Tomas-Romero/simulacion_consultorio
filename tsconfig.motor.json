@@ -1,0 +1,12 @@
+{
+  // El motor es TypeScript puro: sin DOM ni React. Este tsconfig lo compila
+  // con solo la librería estándar (lib ES2022, sin "DOM" ni tipos de Node):
+  // cualquier uso de window, document o APIs del navegador rompe el typecheck.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": [],
+    "jsx": "preserve"
+  },
+  "include": ["src/motor"]
+}
