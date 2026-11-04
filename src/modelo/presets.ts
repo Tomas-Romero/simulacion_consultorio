@@ -43,6 +43,7 @@ function profesional(
     turno,
     duracionTurno,
     ocupacionAgenda: 1,
+    cuposEspontaneos: { cadaN: 0 },
     demoraInicio: { tipo: 'triangular', min: 0, moda: 5, max: 20 },
     // k = 0: los sobreturnos son la variable de decisión del #4, no un dato de la situación inicial.
     sobreturnos: { k: 0, politica: 'intercalado' },
@@ -57,6 +58,8 @@ export interface CalibracionPreset {
   /** Horas del perfil con demanda espontánea desde las 08:00 (12 = todo el día). */
   horasEspontaneos: number;
   ocupacionAgenda: number;
+  /** Cupos de demanda espontánea: 1 de cada N slots (0 = sin cupos). */
+  cuposCadaN: number;
 }
 
 function base(nombre: string, descripcion: string, profesionales: Profesional[], cal: CalibracionPreset, recepcionistas: number): Escenario {
@@ -64,7 +67,7 @@ function base(nombre: string, descripcion: string, profesionales: Profesional[],
     nombre,
     descripcion,
     jornada: { inicio: 8 * HORA, cambioTurno: 14 * HORA, fin: 20 * HORA },
-    profesionales: profesionales.map((p) => ({ ...p, ocupacionAgenda: cal.ocupacionAgenda })),
+    profesionales: profesionales.map((p) => ({ ...p, ocupacionAgenda: cal.ocupacionAgenda, cuposEspontaneos: { cadaN: cal.cuposCadaN } })),
     pacientes: {
       proporcionPrimeraVez: cal.proporcionPrimeraVez,
       anticipacion: TABLA_ANTICIPACION,
@@ -84,20 +87,24 @@ function base(nombre: string, descripcion: string, profesionales: Profesional[],
       mezcla: MEZCLA_ESPONTANEOS,
       proporcionUrgencias: 0.1,
       abandonan: true,
-      paciencia: { tipo: 'exponencial', media: 45 },
+      // Iteración de validación 2: lognormal (P(< 20 min) ≈ 1,8 %); antes exponencial de media 45.
+      paciencia: { tipo: 'lognormal', media: 60, cv: 0.5 },
       cierreAntesDelFin: 30,
     },
     admision: { recepcionistas, tiempo: { tipo: 'triangular', min: 1, moda: 2, max: 5 } },
-    costos: { espera: 150, ocio: 500, extra: 750, perdido: 20000, honorario: 30000 },
+    // c_ocio derivado = honorario / duración media de la consulta de cada profesional (antes 500 $/min fijo).
+    costos: { espera: 150, ocio: 'derivado', extra: 750, perdido: 20000, honorario: 30000 },
   });
 }
 
 /** Valores de calibración vigentes (los anteriores están en docs/calibracion.md). */
 export const CALIBRACION_PRESETS: Record<'chico' | 'policonsultorio' | 'centro', CalibracionPreset> = {
   // Antes de #2b: primera vez 0,4 en los tres y demanda espontánea todo el día en el consultorio chico.
-  chico: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 0.4, horasEspontaneos: 6, ocupacionAgenda: 1 },
-  policonsultorio: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1, horasEspontaneos: 12, ocupacionAgenda: 1 },
-  centro: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1.5, horasEspontaneos: 12, ocupacionAgenda: 1 },
+  // #2c (iteración de validación 2): cupos de demanda espontánea y tasa de espontáneos recalibrados.
+  // Antes de #2c: sin cupos y escala de espontáneos 0,4 / 1 / 1,5.
+  chico: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1.6, horasEspontaneos: 6, ocupacionAgenda: 1, cuposCadaN: 2 },
+  policonsultorio: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 2, horasEspontaneos: 12, ocupacionAgenda: 1, cuposCadaN: 3 },
+  centro: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1.5, horasEspontaneos: 12, ocupacionAgenda: 1, cuposCadaN: 12 },
 };
 
 export const PRESET_CONSULTORIO_CHICO = base(

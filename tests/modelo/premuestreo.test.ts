@@ -5,8 +5,15 @@
 import { describe, expect, it } from 'vitest';
 import { ESCENARIO_POR_DEFECTO, POLITICAS_SOBRETURNO, generarDia, prepararEscenario, type Escenario, type PacienteGenerado } from '../../src/modelo';
 
-function conK(k: number, politica: (typeof POLITICAS_SOBRETURNO)[number]): Escenario {
-  return { ...ESCENARIO_POR_DEFECTO, profesionales: ESCENARIO_POR_DEFECTO.profesionales.map((p) => ({ ...p, sobreturnos: { k, politica } })) };
+function conK(k: number, politica: (typeof POLITICAS_SOBRETURNO)[number], cuposCadaN?: number): Escenario {
+  return {
+    ...ESCENARIO_POR_DEFECTO,
+    profesionales: ESCENARIO_POR_DEFECTO.profesionales.map((p) => ({
+      ...p,
+      sobreturnos: { k, politica },
+      cuposEspontaneos: cuposCadaN === undefined ? p.cuposEspontaneos : { cadaN: cuposCadaN },
+    })),
+  };
 }
 
 /** Todos los atributos menos el id (que depende del orden de generación). */
@@ -54,9 +61,9 @@ describe('pre-muestreo de atributos por identidad', () => {
     expect(generarDia(prep, 6, 3)).not.toEqual(generarDia(prep, 5, 3));
   });
 
-  it('ubicación de sobreturnos según la política', () => {
+  it('ubicación de sobreturnos según la política (agenda sin cupos)', () => {
     const horas = (politica: (typeof POLITICAS_SOBRETURNO)[number]) =>
-      generarDia(prepararEscenario(conK(3, politica)), 1, 0)
+      generarDia(prepararEscenario(conK(3, politica, 0)), 1, 0)
         .pacientes.filter((p) => p.origen === 'sobreturno' && p.profesional === 0)
         .map((p) => p.horaTurno);
     // P1: clínica mañana, D = 15, 24 slots desde las 08:00 (480).
@@ -64,7 +71,7 @@ describe('pre-muestreo de atributos por identidad', () => {
     expect(horas('intercalado')).toEqual([480 + 6 * 15, 480 + 12 * 15, 480 + 18 * 15]);
     expect(horas('final')).toEqual([840, 855, 870]);
     // mayor ausentismo: los 3 slots con mayor P(no-show) predicha
-    const dia = generarDia(prepararEscenario(conK(3, 'mayor_ausentismo')), 1, 0);
+    const dia = generarDia(prepararEscenario(conK(3, 'mayor_ausentismo', 0)), 1, 0);
     const regulares = dia.pacientes.filter((p) => p.origen === 'turno' && p.profesional === 0);
     const esperado = [...regulares].sort((x, y) => y.pNoShow! - x.pNoShow! || x.slot - y.slot).slice(0, 3).map((p) => p.horaTurno);
     expect(horas('mayor_ausentismo')).toEqual(esperado);

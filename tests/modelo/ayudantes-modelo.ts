@@ -3,7 +3,14 @@ import { ESPECIALIDADES, EsquemaEscenario, PRESET_POLICONSULTORIO_3, type Escena
 
 export const h = (hora: number, minuto = 0): number => hora * 60 + minuto;
 
-export function profesionalPrueba(id: string, especialidad: Especialidad, turno: Profesional['turno'], demora: number, D: Profesional['duracionTurno'] = 15): Profesional {
+export function profesionalPrueba(
+  id: string,
+  especialidad: Especialidad,
+  turno: Profesional['turno'],
+  demora: number,
+  D: Profesional['duracionTurno'] = 15,
+  cuposCadaN = 0,
+): Profesional {
   return {
     id,
     nombre: id,
@@ -11,6 +18,7 @@ export function profesionalPrueba(id: string, especialidad: Especialidad, turno:
     turno,
     duracionTurno: D,
     ocupacionAgenda: 0,
+    cuposEspontaneos: { cadaN: cuposCadaN },
     demoraInicio: { tipo: 'constante', valor: demora },
     sobreturnos: { k: 0, politica: 'inicio' },
   };

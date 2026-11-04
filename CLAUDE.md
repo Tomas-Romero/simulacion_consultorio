@@ -54,6 +54,24 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - **Unidad de tiempo del modelo:** minutos (desde las 00:00 en el consultorio).
 - **Datos:** todos ficticios y marcados como supuestos hasta que se importen datos reales.
 
+## Criterio de decisión (definido en #2c)
+
+- **Principal:** beneficio neto esperado `B = ingresos − c_espera·espera − c_extra·extra − c_perdido·perdidos`
+  (el ocio no se resta).
+- **Secundario:** costo clásico `C = c_espera·espera + c_ocio·ocio + c_extra·extra + c_perdido·perdidos`,
+  con `c_ocio` derivado = honorario / duración media de la consulta de cada profesional.
+- Detalle y equivalencia aproximada `C + B ≈ constante` en `docs/modelo-conceptual.md` (sección 1)
+  y `docs/calibracion.md` (sección 8).
+
+## Identidad visual para el #3 (decidida, todavía NO implementada)
+
+- Estilo **TARC Tech** adaptado a un contexto médico: base **zinc**, con **modo claro y oscuro**.
+- Colores: **cian `#06B6D4`** como color principal de datos; **verde `#10B981`** para
+  indicadores positivos; **naranja `#F97316`** para acentos de marca y acciones.
+- Fuentes: **Fira Sans** (interfaz) y **Fraunces** (títulos destacados).
+- Crédito **TARC Tech** con su isotipo en el pie y en "Acerca de".
+- La autoría (nombre que figura como autor) es un **dato configurable**, no un texto fijo.
+
 ## Arquitectura
 
 - `src/motor/` — TypeScript puro (sin React ni DOM; `tsconfig.motor.json` lo compila sin
@@ -78,7 +96,7 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `npm run rendimiento` — ms por día simulado para cada preset
 - `npm run calibrar -- [semilla] [días]` — situación inicial de los presets contra las metas de
   calibración (ver `docs/calibracion.md`)
-- `npm run barrido-control` — barrido k = 0–4 del #2b (no es el experimento del #4)
+- `npm run barrido-control` — barrido de control k = 0–6 con B y C del #2c (no es el experimento del #4)
 - `npm run cobertura` — estudio de cobertura del IC 95 % con 20 semillas (~40 s)
 
 ## Entorno

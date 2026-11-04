@@ -54,19 +54,24 @@ export interface DiaGenerado {
   demoras: number[];
 }
 
-/** Índices de slot (o −1 = después del cierre) donde van los k sobreturnos, según la política. */
-export function ubicarSobreturnos(politica: string, k: number, n: number, pSlot: readonly number[]): number[] {
+/**
+ * Índices de slot (o −1 = después del cierre) donde van los k sobreturnos, según la política.
+ * `candidatos` son los slots para turnos (los cupos de demanda espontánea nunca reciben
+ * sobreturnos); `pSlot[j]` es la P(slot j sin paciente) predicha.
+ */
+export function ubicarSobreturnos(politica: string, k: number, candidatos: readonly number[], pSlot: readonly number[]): number[] {
+  const m = candidatos.length;
   if (k === 0) return [];
-  if (n === 0) return Array.from({ length: k }, () => -1);
+  if (m === 0) return Array.from({ length: k }, () => -1);
   switch (politica) {
     case 'inicio':
-      return Array.from({ length: k }, (_, i) => i % n);
+      return Array.from({ length: k }, (_, i) => candidatos[i % m]!);
     case 'intercalado':
-      return Array.from({ length: k }, (_, i) => Math.min(n - 1, Math.floor(((i + 1) * n) / (k + 1))));
+      return Array.from({ length: k }, (_, i) => candidatos[Math.min(m - 1, Math.floor(((i + 1) * m) / (k + 1)))]!);
     case 'mayor_ausentismo': {
       // Mayor P(slot sin paciente): 1 si está libre, si no la P(no-show) predicha. Empate: el más temprano.
-      const orden = pSlot.map((p, j) => ({ p, j })).sort((a, b) => b.p - a.p || a.j - b.j);
-      return Array.from({ length: k }, (_, i) => orden[i % n]!.j);
+      const orden = candidatos.map((j) => ({ p: pSlot[j]!, j })).sort((a, b) => b.p - a.p || a.j - b.j);
+      return Array.from({ length: k }, (_, i) => orden[i % m]!.j);
     }
     default: // 'final'
       return Array.from({ length: k }, () => -1);
@@ -131,14 +136,17 @@ export function generarDia(prep: EscenarioPreparado, semilla: number, replica: n
 
   escenario.profesionales.forEach((prof, iProf) => {
     demoras.push(muestra(prep.demoras[iProf]!, flujo(`${prof.id}/demora`).uniforme()));
-    const { inicio, fin } = prep.turnos[iProf]!;
+    const { inicio } = prep.turnos[iProf]!;
     const D = prof.duracionTurno;
-    const n = Math.floor((fin - inicio) / D);
+    const n = prep.slots[iProf]!;
+    const esCupo = prep.esCupo[iProf]!;
 
     // Turnos regulares: el slot j sortea si está reservado y todos sus atributos.
+    // Los cupos de demanda espontánea no se reservan (ni sortean: no tienen paciente).
     const pSlot: number[] = new Array<number>(n).fill(1);
     if (prof.ocupacionAgenda > 0) {
       for (let j = 0; j < n; j++) {
+        if (esCupo[j]) continue;
         const clave = `${prof.id}/t/${j}`;
         const u = sortear10(flujo(clave));
         if (u[0]! < prof.ocupacionAgenda) {
@@ -150,7 +158,8 @@ export function generarDia(prep: EscenarioPreparado, semilla: number, replica: n
 
     // Sobreturnos: su identidad es el ordinal i; la política solo decide la hora.
     const { k, politica } = prof.sobreturnos;
-    const ubicacion = ubicarSobreturnos(politica, k, n, pSlot);
+    const candidatos = Array.from({ length: n }, (_, j) => j).filter((j) => !esCupo[j]);
+    const ubicacion = ubicarSobreturnos(politica, k, candidatos, pSlot);
     let extra = 0;
     ubicacion.forEach((slot, i) => {
       const hora = slot >= 0 ? inicio + slot * D : inicio + (n + extra++) * D;

@@ -14,7 +14,7 @@ import {
   type Distribucion,
   type FuenteUniforme,
 } from '../motor';
-import { ESPECIALIDADES, EsquemaEscenario, type DistribucionTiempo, type EntradaEscenario, type Escenario, type Especialidad } from './escenario';
+import { ESPECIALIDADES, EsquemaEscenario, type DistribucionTiempo, type EntradaEscenario, type Escenario, type Especialidad, type Profesional } from './escenario';
 
 export function constante(valor: number): Distribucion {
   return { nombre: `Constante(${valor})`, media: valor, varianza: 0, muestrear: () => valor };
@@ -69,11 +69,37 @@ export interface EscenarioPreparado {
   readonly finEspontaneos: number;
   /** Mezcla renormalizada sobre las especialidades presentes, como acumulada (orden fijo de ESPECIALIDADES). */
   readonly mezclaAcumulada: readonly { especialidad: Especialidad; acumulada: number }[];
+  /** Cantidad de slots de la agenda de cada profesional: ⌊(fin − inicio) / D⌋. */
+  readonly slots: readonly number[];
+  /** esCupo[i][j]: el slot j del profesional i es un cupo de demanda espontánea. */
+  readonly esCupo: readonly (readonly boolean[])[];
+  /** Costo de ocio efectivo de cada profesional [$/min] (fijo o derivado). */
+  readonly cOcio: readonly number[];
 }
 
 export function probabilidadNoShow(escenario: Escenario, dias: number): number {
   const { beta0, beta1 } = escenario.ausentismo;
   return 1 / (1 + Math.exp(-(beta0 + beta1 * dias)));
+}
+
+/** El slot j es cupo de demanda espontánea si j mod N = ⌊N/2⌋ (equiespaciados, el primero a mitad del primer bloque). */
+export function esSlotCupo(j: number, cadaN: number): boolean {
+  return cadaN > 0 && j % cadaN === Math.floor(cadaN / 2);
+}
+
+/** Duración media de las consultas con turno de un profesional: D · (p·f₁ + (1 − p)·f_c) [min]. */
+export function duracionMediaConsulta(escenario: Escenario, p: Profesional): number {
+  const { proporcionPrimeraVez: pv, atencion } = escenario.pacientes;
+  return p.duracionTurno * (pv * atencion.factorPrimeraVez + (1 - pv) * atencion.factorControl);
+}
+
+/**
+ * Costo de ocio de cada profesional. Si es 'derivado', es el costo de oportunidad: lo que
+ * se deja de facturar por minuto ocioso = honorario / duración media de sus consultas.
+ */
+export function costoOcio(escenario: Escenario, p: Profesional): number {
+  const c = escenario.costos.ocio;
+  return c === 'derivado' ? escenario.costos.honorario / duracionMediaConsulta(escenario, p) : c;
 }
 
 export function prepararEscenario(entrada: EntradaEscenario | Escenario): EscenarioPreparado {
@@ -82,6 +108,7 @@ export function prepararEscenario(entrada: EntradaEscenario | Escenario): Escena
   const turnos = escenario.profesionales.map((p) =>
     p.turno === 'manana' ? { inicio: jornada.inicio, fin: jornada.cambioTurno } : { inicio: jornada.cambioTurno, fin: jornada.fin },
   );
+  const slots = escenario.profesionales.map((p, i) => Math.floor((turnos[i]!.fin - turnos[i]!.inicio) / p.duracionTurno));
   const { atencion } = pacientes;
   const factorAtencion =
     atencion.familia === 'lognormal' ? lognormal(1, atencion.cv) : atencion.familia === 'exponencial' ? exponencial(1) : constante(1);
@@ -122,5 +149,8 @@ export function prepararEscenario(entrada: EntradaEscenario | Escenario): Escena
     inicioEspontaneos,
     finEspontaneos,
     mezclaAcumulada,
+    slots,
+    esCupo: escenario.profesionales.map((p, i) => Array.from({ length: slots[i]! }, (_, j) => esSlotCupo(j, p.cuposEspontaneos.cadaN))),
+    cOcio: escenario.profesionales.map((p) => costoOcio(escenario, p)),
   };
 }

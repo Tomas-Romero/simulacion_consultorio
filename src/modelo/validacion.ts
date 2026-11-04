@@ -25,8 +25,8 @@ export function escenarioDeterminista(conAdmision: boolean): Escenario {
     ...base,
     nombre: conAdmision ? 'Determinista con admisión constante' : 'Determinista sin admisión',
     profesionales: [
-      { ...base.profesionales[0]!, duracionTurno: 20, demoraInicio: { tipo: 'constante', valor: 0 }, sobreturnos: { k: 0, politica: 'inicio' } },
-      { ...base.profesionales[1]!, turno: 'tarde', duracionTurno: 30, demoraInicio: { tipo: 'constante', valor: 0 }, sobreturnos: { k: 0, politica: 'inicio' } },
+      { ...base.profesionales[0]!, duracionTurno: 20, demoraInicio: { tipo: 'constante', valor: 0 }, cuposEspontaneos: { cadaN: 0 }, sobreturnos: { k: 0, politica: 'inicio' } },
+      { ...base.profesionales[1]!, turno: 'tarde', duracionTurno: 30, demoraInicio: { tipo: 'constante', valor: 0 }, cuposEspontaneos: { cadaN: 0 }, sobreturnos: { k: 0, politica: 'inicio' } },
     ],
     pacientes: {
       ...base.pacientes,
@@ -62,6 +62,7 @@ function escenarioEstacionario(o: {
       duracionTurno: 15,
       ocupacionAgenda: 0,
       demoraInicio: { tipo: 'constante', valor: 0 },
+      cuposEspontaneos: { cadaN: 0 },
       sobreturnos: { k: 0, politica: 'inicio' },
     })),
     pacientes: { ...base.pacientes, atencion: { familia: o.familia, cv: o.cv, factorPrimeraVez: 0.8, factorControl: 0.8, factorEspontaneo: 0.8, factorUrgencia: 0.8 } },

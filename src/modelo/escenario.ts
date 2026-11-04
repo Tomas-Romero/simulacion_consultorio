@@ -51,8 +51,14 @@ export const EsquemaProfesional = z.object({
   turno: z.enum(['manana', 'tarde']),
   /** Duración del turno de agenda D [min]. */
   duracionTurno: z.union([z.literal(15), z.literal(20), z.literal(30)]),
-  /** Fracción de los slots de la agenda que están reservados (1 = agenda llena). */
+  /** Fracción de los slots para turnos (no cupos) que están reservados (1 = agenda llena). */
   ocupacionAgenda: proporcion,
+  /**
+   * Cupos de demanda espontánea: 1 de cada `cadaN` slots de la agenda, equiespaciados
+   * (slots j con j mod cadaN = ⌊cadaN/2⌋). No se reservan para turnos; durante su ventana
+   * los espontáneos pasan antes que los puntuales. 0 = sin cupos.
+   */
+  cuposEspontaneos: z.object({ cadaN: z.number().int().min(0).max(40) }).default({ cadaN: 0 }),
   /** Demora del médico al iniciar su turno [min]. */
   demoraInicio: EsquemaDistribucionTiempo,
   sobreturnos: z.object({
@@ -125,8 +131,11 @@ export const EsquemaEscenario = z
     costos: z.object({
       /** $ por minuto de espera de un paciente. */
       espera: noNegativo,
-      /** $ por minuto de ocio del médico. */
-      ocio: noNegativo,
+      /**
+       * $ por minuto de ocio del médico (solo entra en el costo clásico C). 'derivado' = costo de
+       * oportunidad de cada profesional: honorario / duración media de sus consultas con turno.
+       */
+      ocio: z.union([noNegativo, z.literal('derivado')]),
       /** $ por minuto de hora extra. */
       extra: noNegativo,
       /** $ por paciente no atendido. */

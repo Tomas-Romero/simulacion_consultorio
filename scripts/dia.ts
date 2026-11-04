@@ -18,13 +18,13 @@ console.log(`# ${ESCENARIO_POR_DEFECTO.nombre} — semilla ${semilla}, réplica 
 console.log(`Día: ${hhmm(m.inicioDia)} a ${hhmm(m.finDia)} · ${res.eventos} eventos · ${res.traza!.registros.length} registros de traza\n`);
 
 console.log('## Por profesional');
-console.log('| Profesional | Turno | Llega | Se va | Ocio [min] | Extra [min] | Utilización | Atendidos (T/S/Td/E/U) | Ausentes | Perdidos propios | Costo total | Ingresos | Neto |');
+console.log('| Profesional | Turno | Llega | Se va | Ocio [min] | Extra [min] | Utilización | Atendidos (T/S/Td/E/U) | Ausentes | Perdidos propios | Costo C | Ingresos | Beneficio B |');
 console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for (const p of m.porProfesional) {
   const a = p.atendidos;
   console.log(
     `| ${p.id} ${p.nombre} | ${hhmm(p.inicioTurno)}–${hhmm(p.finTurno)} | ${hhmm(p.llegada)} | ${hhmm(p.salida)} | ${f(p.ocio)} | ${f(p.horasExtra)} | ${f(100 * p.utilizacion)} % | ` +
-      `${a.turno}/${a.sobreturno}/${a.tardio}/${a.espontaneo}/${a.urgencia} | ${p.ausentes} | ${p.perdidosPropios} | ${pesos(p.costos.total)} | ${pesos(p.ingresos)} | ${pesos(p.neto)} |`,
+      `${a.turno}/${a.sobreturno}/${a.tardio}/${a.espontaneo}/${a.urgencia} | ${p.ausentes} | ${p.perdidosPropios} | ${pesos(p.costos.total)} | ${pesos(p.ingresos)} | ${pesos(p.beneficio)} |`,
   );
 }
 for (const p of m.porProfesional) {
@@ -42,9 +42,9 @@ console.log(`Espera en sala del consultorio [min] (inicio consulta − fin admis
 console.log(`Ocio médico total: ${f(m.ocio)} min · horas extra total: ${f(m.horasExtra)} min`);
 console.log(`Utilización médicos: ${f(100 * m.utilizacionMedicos)} % · utilización admisión: ${f(100 * m.utilizacionAdmision)} %`);
 console.log(
-  `Costos: espera ${pesos(m.costos.espera)} + ocio ${pesos(m.costos.ocio)} + extra ${pesos(m.costos.extra)} + perdidos ${pesos(m.costos.perdidos)} = ${pesos(m.costos.total)}`,
+  `Costo clásico C: espera ${pesos(m.costos.espera)} + ocio ${pesos(m.costos.ocio)} + extra ${pesos(m.costos.extra)} + perdidos ${pesos(m.costos.perdidos)} = ${pesos(m.costos.total)}`,
 );
-console.log(`Ingresos: ${pesos(m.ingresos)} · Resultado neto: ${pesos(m.neto)}`);
+console.log(`Ingresos: ${pesos(m.ingresos)} · Beneficio neto B: ${pesos(m.beneficio)}`);
 console.log(`Little del día: L = ${f(m.little.L, 4)} · λ·W = ${f(m.little.lambda * m.little.W, 4)} (n = ${m.little.n}, T = ${f(m.little.T)} min, W = ${f(m.little.W)} min)`);
 
 if (m.serie) {

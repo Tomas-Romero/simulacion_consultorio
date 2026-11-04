@@ -25,12 +25,26 @@ export interface ResumenEspera {
   max: number;
 }
 
+/**
+ * Costo clásico de la bibliografía de agendamiento (criterio SECUNDARIO):
+ * C = c_espera·espera + c_ocio·ocio + c_extra·horas extra + c_perdido·perdidos.
+ */
 export interface Costos {
   espera: number;
   ocio: number;
   extra: number;
   perdidos: number;
   total: number;
+}
+
+/**
+ * Beneficio neto (criterio PRINCIPAL): B = ingresos − c_espera·espera − c_extra·extra − c_perdido·perdidos.
+ * El ocio no se resta: ya está reflejado en las consultas que no se facturan.
+ * Con c_ocio = honorario / duración media, C + B = ingresos + c_ocio·ocio ≈ honorario × capacidad,
+ * casi constante entre escenarios: maximizar B y minimizar C eligen (casi) lo mismo.
+ */
+export function beneficioDe(ingresos: number, c: Costos): number {
+  return ingresos - c.espera - c.extra - c.perdidos;
 }
 
 export interface MetricasProfesional {
@@ -51,9 +65,12 @@ export interface MetricasProfesional {
   /** Pacientes con turno con este profesional que se perdieron (tardíos rechazados). */
   perdidosPropios: number;
   espera: Record<Clase, ResumenEspera>;
+  /** Costo de ocio efectivo de este profesional [$/min] (fijo o derivado). */
+  cOcio: number;
   costos: Costos;
   ingresos: number;
-  neto: number;
+  /** Beneficio neto B de este profesional (perdidos: solo sus tardíos rechazados). */
+  beneficio: number;
 }
 
 export interface SerieSala {
@@ -82,9 +99,11 @@ export interface MetricasDia {
   ausentes: number;
   perdidos: Record<MotivoPerdida, number>;
   perdidosTotal: number;
+  /** Costo clásico C (criterio secundario). */
   costos: Costos;
   ingresos: number;
-  neto: number;
+  /** Beneficio neto B (criterio principal). */
+  beneficio: number;
   /** Primera llegada al edificio y última salida (de pacientes o médicos). */
   inicioDia: number;
   finDia: number;
@@ -117,8 +136,9 @@ export function calcularMetricas(
   const atendidos = pacientes.filter((p) => p.estado === 'atendido');
   const esperas = new Map<PacienteSim, number>(atendidos.map((p) => [p, esperaDe(p)]));
 
-  const costosDe = (espera: number, ocio: number, extra: number, perdidos: number): Costos => {
-    const k = { espera: c.espera * espera, ocio: c.ocio * ocio, extra: c.extra * extra, perdidos: c.perdido * perdidos };
+  /** `costoOcio` ya viene en pesos (cada profesional tiene su c_ocio). */
+  const costosDe = (espera: number, costoOcio: number, extra: number, perdidos: number): Costos => {
+    const k = { espera: c.espera * espera, ocio: costoOcio, extra: c.extra * extra, perdidos: c.perdido * perdidos };
     return { ...k, total: k.espera + k.ocio + k.extra + k.perdidos };
   };
 
@@ -127,7 +147,8 @@ export function calcularMetricas(
     const horasExtra = Math.max(0, p.salida - p.finTurno);
     const perdidosPropios = p.propios.filter((x) => x.estado === 'perdido').length;
     const sumaEspera = suyos.reduce((s, x) => s + esperas.get(x)!, 0);
-    const costos = costosDe(sumaEspera, p.ocio, horasExtra, perdidosPropios);
+    const cOcio = prep.cOcio[p.idx]!;
+    const costos = costosDe(sumaEspera, cOcio * p.ocio, horasExtra, perdidosPropios);
     const ingresos = c.honorario * suyos.length;
     return {
       id: p.cfg.id,
@@ -145,9 +166,10 @@ export function calcularMetricas(
       ausentes: p.propios.filter((x) => x.estado === 'ausente').length,
       perdidosPropios,
       espera: porClase((cl) => resumir(suyos.filter((x) => x.clase === cl && medible(x)).map((x) => esperas.get(x)!))),
+      cOcio,
       costos,
       ingresos,
-      neto: ingresos - costos.total,
+      beneficio: beneficioDe(ingresos, costos),
     };
   });
 
@@ -165,7 +187,8 @@ export function calcularMetricas(
   const ocio = porProfesional.reduce((s, p) => s + p.ocio, 0);
   const horasExtra = porProfesional.reduce((s, p) => s + p.horasExtra, 0);
   const sumaEspera = atendidos.reduce((s, x) => s + esperas.get(x)!, 0);
-  const costos = costosDe(sumaEspera, ocio, horasExtra, perdidosTotal);
+  const costoOcio = porProfesional.reduce((s, p) => s + p.costos.ocio, 0);
+  const costos = costosDe(sumaEspera, costoOcio, horasExtra, perdidosTotal);
   const ingresos = c.honorario * atendidos.length;
 
   // Little: N(t) = pacientes dentro del edificio. ∫N dt por barrido de entradas y salidas.
@@ -218,7 +241,7 @@ export function calcularMetricas(
     perdidosTotal,
     costos,
     ingresos,
-    neto: ingresos - costos.total,
+    beneficio: beneficioDe(ingresos, costos),
     inicioDia,
     finDia,
     little,

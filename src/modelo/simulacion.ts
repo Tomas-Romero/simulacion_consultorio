@@ -237,12 +237,24 @@ export function simularDia(prep: EscenarioPreparado, opciones: OpcionesDia): Res
     if (hasta > desde) p.ocio += hasta - desde;
   };
 
+  /** ¿El reloj está dentro de la ventana de un cupo de demanda espontánea de p? */
+  const enCupo = (p: ProfesionalSim): boolean => {
+    const j = Math.floor((sim.reloj - p.inicioTurno) / p.cfg.duracionTurno);
+    const cupos = prep.esCupo[p.idx]!;
+    return j >= 0 && j < cupos.length && cupos[j]!;
+  };
+
   const proximoPara = (p: ProfesionalSim): PacienteSim | undefined => {
     const esp = p.cfg.especialidad;
     const resp = responsable(p);
     if (resp) {
       const u = colaUrgencias.get(esp)!.sacar();
       if (u) return u;
+      // Durante un cupo de demanda espontánea: (a) urgencias, (d) espontáneos, (b) puntuales, (c) tardíos.
+      if (enCupo(p)) {
+        const e = colaEspontaneos.get(esp)!.sacar();
+        if (e) return e;
+      }
     }
     const puntual = p.puntuales.extraerMinimo();
     if (puntual) return puntual;

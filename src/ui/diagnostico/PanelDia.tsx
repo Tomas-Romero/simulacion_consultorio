@@ -80,7 +80,7 @@ export function PanelDia() {
 
       <h3 style={{ fontSize: 16 }}>Por profesional</h3>
       <Tabla
-        encabezados={['Profesional', 'Turno', 'Llega', 'Se va', 'Ocio [min]', 'Extra [min]', 'Utilización', 'Atendidos T/S/Td/E/U', 'Ausentes', 'Espera turno media/P90', 'Costo', 'Neto']}
+        encabezados={['Profesional', 'Turno', 'Llega', 'Se va', 'Ocio [min]', 'Extra [min]', 'Utilización', 'Atendidos T/S/Td/E/U', 'Ausentes', 'Espera turno media/P90', 'Costo C', 'Beneficio B']}
         filas={m.porProfesional.map((p) => [
           `${p.id} · ${p.nombre}`,
           `${hhmm(p.inicioTurno)}–${hhmm(p.finTurno)}`,
@@ -93,7 +93,7 @@ export function PanelDia() {
           p.ausentes,
           esp(p.espera.turno),
           pesos(p.costos.total),
-          pesos(p.neto),
+          pesos(p.beneficio),
         ])}
       />
 
@@ -114,8 +114,8 @@ export function PanelDia() {
         Ocio {f(m.ocio)} min · horas extra {f(m.horasExtra)} min · utilización médicos {f(100 * m.utilizacionMedicos)} % · admisión{' '}
         {f(100 * m.utilizacionAdmision)} %.
         <br />
-        Costos: espera {pesos(m.costos.espera)} + ocio {pesos(m.costos.ocio)} + extra {pesos(m.costos.extra)} + perdidos {pesos(m.costos.perdidos)} ={' '}
-        <strong>{pesos(m.costos.total)}</strong> · ingresos {pesos(m.ingresos)} · neto <strong>{pesos(m.neto)}</strong>.
+        Costo clásico C: espera {pesos(m.costos.espera)} + ocio {pesos(m.costos.ocio)} + extra {pesos(m.costos.extra)} + perdidos {pesos(m.costos.perdidos)} ={' '}
+        <strong>{pesos(m.costos.total)}</strong> · ingresos {pesos(m.ingresos)} · beneficio B <strong>{pesos(m.beneficio)}</strong>.
         <br />
         Little del día: L = {f(m.little.L, 3)}, λ·W = {f(m.little.lambda * m.little.W, 3)}.
       </p>

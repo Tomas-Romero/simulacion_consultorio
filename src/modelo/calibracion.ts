@@ -33,6 +33,7 @@ export interface IndicadoresSituacion {
   sinProfesionalPorDia: number;
   fueraDeHorarioPorDia: number;
   costoMedio: number;
+  beneficioMedio: number;
   /** Espera media de los espontáneos no urgentes atendidos [min]. */
   esperaEspontaneo: number;
   /** Fracción de los abandonos según dónde ocurrieron: cola de admisión, al salir de admisión (paciencia agotada durante la atención) o sala. */
@@ -42,7 +43,7 @@ export interface IndicadoresSituacion {
 export function evaluarSituacion(escenario: Escenario, dias: number, semilla: number): IndicadoresSituacion {
   const prep = prepararEscenario(escenario);
   const nMedicos = escenario.profesionales.length;
-  let util = 0, extra = 0, ocio = 0, costo = 0;
+  let util = 0, extra = 0, ocio = 0, costo = 0, beneficio = 0;
   let turnos = 0, ausentes = 0, sumaEsperaTurno = 0, nEsperaTurno = 0;
   let espEntraron = 0, abandonos = 0, espTotal = 0, sinProf = 0, fuera = 0;
   let sumaEsperaEsp = 0, nEsperaEsp = 0;
@@ -53,6 +54,7 @@ export function evaluarSituacion(escenario: Escenario, dias: number, semilla: nu
     extra += m.horasExtra / nMedicos;
     ocio += m.ocio / nMedicos;
     costo += m.costos.total;
+    beneficio += m.beneficio;
     for (const p of pacientes) {
       if (p.origen === 'turno') {
         turnos++;
@@ -92,6 +94,7 @@ export function evaluarSituacion(escenario: Escenario, dias: number, semilla: nu
     sinProfesionalPorDia: sinProf / dias,
     fueraDeHorarioPorDia: fuera / dias,
     costoMedio: costo / dias,
+    beneficioMedio: beneficio / dias,
     esperaEspontaneo: nEsperaEsp > 0 ? sumaEsperaEsp / nEsperaEsp : 0,
     abandonosPorEtapa: {
       colaAdmision: abandonos > 0 ? etapas.colaAdmision / abandonos : 0,

@@ -107,7 +107,10 @@ describe('e) casos límite', () => {
       expect(p.ocio).toBeCloseTo(p.finTurno - p.llegada, 9);
       expect(p.horasExtra).toBe(0);
     }
-    expect(res.metricas.costos.total).toBeCloseTo(e.costos.ocio * res.metricas.ocio, 6);
+    // C es solo ocio (con el c_ocio derivado de cada profesional) y B = 0: no hay ingresos ni otros costos.
+    const costoOcio = res.metricas.porProfesional.reduce((s, p) => s + p.cOcio * p.ocio, 0);
+    expect(res.metricas.costos.total).toBeCloseTo(costoOcio, 6);
+    expect(res.metricas.beneficio).toBe(0);
     verificarConservacion(res);
   });
 
