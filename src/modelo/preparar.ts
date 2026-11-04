@@ -75,6 +75,8 @@ export interface EscenarioPreparado {
   readonly esCupo: readonly (readonly boolean[])[];
   /** Costo de ocio efectivo de cada profesional [$/min] (fijo o derivado). */
   readonly cOcio: readonly number[];
+  /** Costo de hora extra efectivo de cada profesional [$/min] (fijo o derivado). */
+  readonly cExtra: readonly number[];
 }
 
 export function probabilidadNoShow(escenario: Escenario, dias: number): number {
@@ -100,6 +102,17 @@ export function duracionMediaConsulta(escenario: Escenario, p: Profesional): num
 export function costoOcio(escenario: Escenario, p: Profesional): number {
   const c = escenario.costos.ocio;
   return c === 'derivado' ? escenario.costos.honorario / duracionMediaConsulta(escenario, p) : c;
+}
+
+/** Costo de hora extra de cada profesional: fijo, o `derivado` = factor × c_ocio del profesional. */
+export function costoExtra(escenario: Escenario, p: Profesional): number {
+  const c = escenario.costos.extra;
+  return typeof c === 'number' ? c : c.derivado * costoOcio(escenario, p);
+}
+
+/** Minutos desde el inicio del turno en que empieza cada cupo de la agenda (en orden). */
+export function iniciosCupos(cupos: readonly boolean[], duracionTurno: number): number[] {
+  return cupos.flatMap((esCupo, j) => (esCupo ? [j * duracionTurno] : []));
 }
 
 export function prepararEscenario(entrada: EntradaEscenario | Escenario): EscenarioPreparado {
@@ -152,5 +165,6 @@ export function prepararEscenario(entrada: EntradaEscenario | Escenario): Escena
     slots,
     esCupo: escenario.profesionales.map((p, i) => Array.from({ length: slots[i]! }, (_, j) => esSlotCupo(j, p.cuposEspontaneos.cadaN))),
     cOcio: escenario.profesionales.map((p) => costoOcio(escenario, p)),
+    cExtra: escenario.profesionales.map((p) => costoExtra(escenario, p)),
   };
 }

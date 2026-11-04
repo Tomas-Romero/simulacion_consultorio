@@ -1,6 +1,7 @@
 /**
- * Cupos de demanda espontánea (#2c): no se reservan para turnos, no reciben sobreturnos
- * superpuestos y, durante su ventana, el espontáneo que espera pasa antes que el puntual.
+ * Cupos de demanda espontánea: no se reservan para turnos, no reciben sobreturnos
+ * superpuestos y son acumulables (#2d): mientras el profesional tenga cupos adeudados,
+ * el espontáneo que espera pasa antes que el puntual.
  */
 import { describe, expect, it } from 'vitest';
 import { ESCENARIO_POR_DEFECTO, POLITICAS_SOBRETURNO, esSlotCupo, generarDia, prepararEscenario, simularDia, ubicarSobreturnos, type Escenario } from '../../src/modelo';
@@ -52,36 +53,72 @@ describe('cupos en la agenda', () => {
   });
 });
 
-describe('regla de selección durante un cupo', () => {
-  // D = 15 y cupos cada 8 slots → cupos en los slots 4, 12, 20: el slot 4 es 09:00–09:15.
+describe('regla de selección con cupos acumulables', () => {
+  // D = 15 y cupos cada 8 slots → cupos en los slots 4, 12, 20: el primero empieza a las 09:00 y el segundo a las 11:00.
+  const prof = (demora: number) => prepararEscenario(escenarioReglas([profesionalPrueba('P1', 'clinica', 'manana', demora, 15, 8)]));
   const pacientes = [conTurno(0, 'clinica', h(8, 45), h(8, 40)), espontaneo('clinica', h(8, 30))];
 
-  it('dentro de la ventana del cupo, el espontáneo que espera pasa antes que el puntual', () => {
-    const prep = prepararEscenario(escenarioReglas([profesionalPrueba('P1', 'clinica', 'manana', 60, 15, 8)]));
-    const res = simularDia(prep, { semilla: 1, dia: dia(pacientes, [60]) }); // el médico llega 09:00
+  it('con deuda de cupos (el de 09:00 ya empezó), el espontáneo que espera pasa antes que el puntual', () => {
+    const res = simularDia(prof(60), { semilla: 1, dia: dia(pacientes, [60]) }); // el médico llega 09:00
     expect(res.pacientes[1]!.inicioConsulta).toBe(h(9));
     expect(res.pacientes[0]!.inicioConsulta).toBe(h(9, 15));
   });
 
-  it('fuera de la ventana rige el orden normal: primero el puntual', () => {
-    const prep = prepararEscenario(escenarioReglas([profesionalPrueba('P1', 'clinica', 'manana', 75, 15, 8)]));
-    const res = simularDia(prep, { semilla: 1, dia: dia(pacientes, [75]) }); // llega 09:15, ya terminó el cupo
-    expect(res.pacientes[0]!.inicioConsulta).toBe(h(9, 15));
-    expect(res.pacientes[1]!.inicioConsulta).toBe(h(9, 30));
+  it('sin deuda (antes del primer cupo) rige el orden normal: primero el puntual', () => {
+    const res = simularDia(prof(45), { semilla: 1, dia: dia(pacientes, [45]) }); // llega 08:45
+    expect(res.pacientes[0]!.inicioConsulta).toBe(h(8, 45));
+    // A las 09:00 empieza el cupo: deuda 1 y el espontáneo lo usa.
+    expect(res.pacientes[1]!.inicioConsulta).toBe(h(9));
+  });
+
+  it('si la ventana de un cupo pasa sin espontáneos, el que llega después pasa antes que los puntuales siguientes', () => {
+    const ps = [
+      conTurno(0, 'clinica', h(8, 45), h(8, 45)),
+      conTurno(0, 'clinica', h(9, 15), h(8, 50)),
+      conTurno(0, 'clinica', h(9, 30), h(8, 50)),
+      conTurno(0, 'clinica', h(9, 45), h(8, 50)),
+      espontaneo('clinica', h(9, 10)),
+      espontaneo('clinica', h(9, 20)),
+    ];
+    const res = simularDia(prof(0), { semilla: 1, dia: dia(ps, [0]) });
+    const inicio = res.pacientes.map((p) => p.inicioConsulta);
+    // 09:00 (cupo sin espontáneos): no se desperdicia, atiende al puntual de 09:15 adelantado.
+    expect(inicio[0]).toBe(h(8, 45));
+    expect(inicio[1]).toBe(h(9));
+    // El cupo de 09:00 sigue adeudado: el espontáneo de 09:10 pasa antes que el puntual de 09:30.
+    expect(inicio[4]).toBe(h(9, 15));
+    expect(inicio[2]).toBe(h(9, 30));
+    expect(inicio[3]).toBe(h(9, 45));
+    // Ese espontáneo consumió el cupo: el de 09:20 espera a los puntuales.
+    expect(inicio[5]).toBe(h(10));
+  });
+
+  it('atender a un espontáneo en un hueco normal (sin deuda) no consume cupo', () => {
+    const ps = [
+      espontaneo('clinica', h(8, 5)),
+      conTurno(0, 'clinica', h(9), h(8, 55)),
+      espontaneo('clinica', h(9, 5)),
+      conTurno(0, 'clinica', h(9, 15), h(9, 5)),
+    ];
+    const res = simularDia(prof(0), { semilla: 1, dia: dia(ps, [0]) });
+    const inicio = res.pacientes.map((p) => p.inicioConsulta);
+    expect(inicio[0]).toBe(h(8, 5)); // hueco normal, regla (d) sin deuda
+    expect(inicio[1]).toBe(h(8, 55));
+    // A las 09:10 la deuda es 1 (el espontáneo de 08:05 no usó cupo): el espontáneo va primero.
+    expect(inicio[2]).toBe(h(9, 10));
+    expect(inicio[3]).toBe(h(9, 25));
   });
 
   it('si no hay espontáneos esperando, el cupo no se desperdicia: atiende al puntual', () => {
-    const prep = prepararEscenario(escenarioReglas([profesionalPrueba('P1', 'clinica', 'manana', 60, 15, 8)]));
-    const res = simularDia(prep, { semilla: 1, dia: dia([pacientes[0]!], [60]) });
+    const res = simularDia(prof(60), { semilla: 1, dia: dia([pacientes[0]!], [60]) });
     expect(res.pacientes[0]!.inicioConsulta).toBe(h(9));
   });
 
-  it('las urgencias siguen primero, también durante el cupo', () => {
-    const prep = prepararEscenario(escenarioReglas([profesionalPrueba('P1', 'clinica', 'manana', 60, 15, 8)]));
-    const res = simularDia(prep, { semilla: 1, dia: dia([...pacientes, espontaneo('clinica', h(8, 50), { urgencia: true })], [60]) });
+  it('las urgencias siguen primero y no consumen cupo', () => {
+    const res = simularDia(prof(60), { semilla: 1, dia: dia([...pacientes, espontaneo('clinica', h(8, 50), { urgencia: true })], [60]) });
     expect(res.pacientes[2]!.inicioConsulta).toBe(h(9));
-    // La urgencia usó el cupo; a las 09:15 la ventana terminó y rige el orden normal.
-    expect(res.pacientes[0]!.inicioConsulta).toBe(h(9, 15));
-    expect(res.pacientes[1]!.inicioConsulta).toBe(h(9, 30));
+    // El cupo de 09:00 sigue adeudado: el espontáneo pasa antes que el puntual.
+    expect(res.pacientes[1]!.inicioConsulta).toBe(h(9, 15));
+    expect(res.pacientes[0]!.inicioConsulta).toBe(h(9, 30));
   });
 });

@@ -1,12 +1,13 @@
-# Calibración de la situación inicial (pasos #2b y #2c)
+# Calibración de la situación inicial (pasos #2b, #2c y #2d)
 
 > Objetivo: que la situación inicial de cada preset (sin sobreturnos, `k = 0`) represente una
 > operación plausible, con **metas fijadas de antemano** y **sin mirar el k óptimo** durante la
 > calibración. Reproducir con `npm run calibrar` y `npm run barrido-control`.
 >
-> Las secciones 1–6 son la **primera calibración (#2b)** y quedan como registro histórico; sus
-> números corresponden al modelo de ese momento. La **iteración de validación 2 (#2c)**, en
-> las secciones 7–8, corrige tres supuestos y define los presets vigentes.
+> Las secciones 1–6 son la **primera calibración (#2b)** y las secciones 7–8 la **iteración de
+> validación 2 (#2c)**; quedan como registro histórico y sus números corresponden al modelo de
+> ese momento. La **iteración de validación 3 (#2d)**, en la sección 9, es la ÚLTIMA: define los
+> presets vigentes, que quedan **congelados**.
 
 ## 1. Metas (fijadas a priori, mensaje #2b)
 
@@ -222,6 +223,9 @@ pierde la mitad de los turnos y la utilización cae por debajo del 80 %.
 
 ## 8. Barrido de control #2c (uno, parámetros congelados)
 
+> Registro histórico, con c_extra = $750/min fijo y la regla de cupo por ventana. Lo reemplaza el
+> barrido del #2d (sección 9.6).
+
 Policonsultorio, mismo `k` para los 3 profesionales, política intercalado, 1000 días con números
 aleatorios comunes, semilla 2026400. c_ocio derivado: P1 $2.162/min, P2 $1.622/min, P3 $2.162/min.
 
@@ -284,3 +288,210 @@ $750). Por eso **C recomienda menos sobreturnos que B**.
 
 La diferencia de criterio se informa tal cual: según la consigna, no se recalibró para acercar
 los dos óptimos.
+
+## 9. Iteración de validación 3 (#2d): última calibración, presets congelados
+
+### 9.1 Qué se corrigió y por qué
+
+| # | Problema del #2c | Corrección |
+|---|---|---|
+| 1 | **Incoherencia de costos:** c_extra = $750/min < c_ocio ≈ $2.162/min. Para el modelo, un minuto de hora extra costaba menos que un minuto ocioso del turno normal | `costos.extra` acepta un número o `{ derivado: factor }` = factor × c_ocio del profesional, con **factor 1,5** (convención de la bibliografía: la hora extra cuesta más que la normal). Principio de **coherencia c_extra ≥ c_ocio**; el esquema exige factor ≥ 1 |
+| 2 | **Cupo por ventana:** el cupo daba prioridad solo durante su slot; si en ese momento no había espontáneos se perdía, y uno que llegaba después esperaba al próximo cupo (N·D minutos más tarde) | **Cupo acumulable:** cada profesional lleva su deuda de cupos = (cupos cuya hora de inicio ya pasó) − (espontáneos que atendió usando cupo). Con deuda > 0 y un espontáneo de su especialidad esperando: urgencias → espontáneos → puntuales → tardíos, y esa consulta consume un cupo. Sin deuda, el orden normal (un espontáneo atendido en un hueco normal no consume cupo) |
+| 3 | **Presets poco plausibles:** la mitad de la agenda del chico en cupos, la demanda espontánea del policonsultorio duplicada y una política de cupos distinta en cada preset | **Límites de plausibilidad** para esta última calibración (9.2) |
+| 4 | Dos criterios con óptimos distintos | **B es el criterio ÚNICO de decisión**; C se informa como contraste |
+
+**La corrección de c_extra se hizo DESPUÉS del barrido del #2c.** La motivó el principio de
+coherencia (un minuto extra no puede valer menos que uno normal), **no el valor de k\*** que dio
+ese barrido. El #4 incluye la sensibilidad al factor (1 a 2).
+
+c_extra derivado con factor 1,5 (primera vez 0,25):
+
+| D | c_ocio derivado | c_extra derivado |
+|---|---|---|
+| 15 min | $2.162/min | **$3.243/min** |
+| 20 min | $1.622/min | **$2.432/min** |
+| 30 min | $1.081/min | **$1.622/min** |
+
+c_extra no cambia ninguna de las metas: no interviene en la simulación, solo en B y C.
+
+### 9.2 Límites de plausibilidad y regla
+
+- **Cupos:** la MISMA política en los tres presets, entre 1 de cada 3 y 1 de cada 8 turnos de agenda.
+- **Escala de la demanda espontánea:** entre 0,5× y 1,5× del **perfil base de cada preset**, que es
+  el del #2b: chico 0,4 × `PERFIL_ESPONTANEOS`, solo de 08 a 14; policonsultorio 1 ×; centro 1,5 ×.
+- **Ocupación de la agenda:** entre 0,85 y 1.
+- Sin cambios: primera vez 0,25, paciencia lognormal(60; 0,5), metas, c_espera, c_perdido, honorario.
+- **Regla:** primero cumplir las cuatro metas alcanzables y, dentro de eso, minimizar el abandono.
+  Se mantiene el margen del #2c para la utilización: 80,5–87,5 % en la exploración.
+- **Semillas:** exploración **2026110** (nueva), verificación 2026200, barrido **2026500** (nueva).
+  Durante la calibración no se corrió ningún experimento de k.
+
+### 9.3 Exploración (semilla 2026110)
+
+1. **Grilla gruesa** (200 días por punto): N ∈ {3, …, 8}, escala ∈ {0,5; 0,6; …; 1,5} × base,
+   ocupación ∈ {0,85; 0,9; 0,95; 1}, o sea 264 puntos por preset. Combinaciones que cumplen las
+   cuatro metas con margen, y su abandono mínimo:
+
+   | N | Consultorio chico | Policonsultorio | Centro completo |
+   |---|---|---|---|
+   | 3 | ninguna | ninguna | ninguna |
+   | 4 | ninguna | 14,8 % (×1,4) | ninguna |
+   | 5 | ninguna | 16,2 % (×1,2) | ninguna |
+   | 6 | 15,1 % (×1,4) | 16,8 % (×1,0) | ninguna |
+   | 7 | 14,8 % (×1,1) | 17,8 % (×1,1, ocup. 0,95) | 30,7 % (×1,5, util. 80,5 %, justo en el borde) |
+   | 8 | 16,4 % (×1,1) | 18,5 % (×0,8) | 26,7 % (×1,2) |
+
+   Con cupos más frecuentes la utilización no llega al 80 %: se agenda menos y, con la demanda
+   espontánea acotada a 1,5× la base, los cupos no se llenan. El preset que limita es el centro.
+2. **Grilla fina** (600 días por punto) para N ∈ {7, 8}, escala cada 0,05 y ocupación ∈ {0,9; 0,95; 1}.
+   **Con N = 7 el centro no cumple**: ni con escala 1,5 llega al 80,5 %. **N = 8 es la única
+   política común factible.** Mínimos con N = 8:
+   - chico ×1,05: utilización 80,6 %, abandono 14,0 %;
+   - policonsultorio ×0,8: 80,8 %, 17,1 %;
+   - centro ×1,2: 80,7 %, 27,0 %.
+3. **La ocupación no se usa:** en los tres presets el mínimo está en ocupación 1. Bajarla reduce la
+   utilización; para volver al 80 % hace falta más demanda espontánea, y eso sube el abandono.
+4. **Verificación y una corrección.** Con la semilla 2026200, el chico ×1,05 dio **79,8 %** de
+   utilización, fuera de meta. Se lo volvió a medir con la semilla de exploración y 3000 días:
+   ×1,05 → 80,51 % (los 600 días lo sobreestimaban), ×1,10 → 80,90 %, ×1,15 → 81,34 %. Como la
+   diferencia entre semillas fue de 0,7 pp, se eligió la menor escala con utilización ≥ 80,5 + 0,7
+   = 81,2 % en la exploración: **×1,15**. Policonsultorio y centro verificaron a la primera.
+
+### 9.4 Metas: #2c → nueva (1000 días, semilla 2026200)
+
+| Preset | Etapa | Utilización (80–88 %) | Ausentismo (12–18 %) | Espera turno (5–15 min) | Extra/médico (< 20 min) | Abandono (< 5 %) | Ocio/médico [min] | Espont./día |
+|---|---|---|---|---|---|---|---|---|
+| Consultorio chico | calibración #2c | 81,1 % ✔ | 15,2 % ✔ | 10,0 ✔ | 2,1 ✔ | 15,2 % ✘ | 66,5 | 15,2 |
+| | presets #2c con cupo acumulable | 81,8 % ✔ | 15,2 % ✔ | 14,1 ✔ | 3,1 ✔ | 13,1 % ✘ | 64,1 | 15,2 |
+| | **nueva (congelada)** | **80,6 % ✔** | **15,2 % ✔** | **8,6 ✔** | **7,0 ✔** | 14,4 % ✘ | 69,2 | 4,3 |
+| Policonsultorio | calibración #2c | 81,4 % ✔ | 14,7 % ✔ | 9,3 ✔ | 6,6 ✔ | 18,8 % ✘ | 66,7 | 36,9 |
+| | presets #2c con cupo acumulable | 82,1 % ✔ | 14,7 % ✔ | 12,6 ✔ | 8,2 ✔ | 15,8 % ✘ | 64,3 | 36,9 |
+| | **nueva (congelada)** | **80,8 % ✔** | **14,7 % ✔** | **9,3 ✔** | **8,8 ✔** | 16,7 % ✘ | 69,0 | 14,8 |
+| Centro completo | calibración #2c | 81,7 % ✔ | 14,8 % ✔ | 9,1 ✔ | 10,3 ✔ | 31,8 % ✘ | 66,1 | 27,8 |
+| | presets #2c con cupo acumulable | 81,9 % ✔ | 14,8 % ✔ | 9,9 ✔ | 11,1 ✔ | 29,0 % ✘ | 65,5 | 27,8 |
+| | **nueva (congelada)** | **80,9 % ✔** | **14,8 % ✔** | **10,1 ✔** | **10,7 ✔** | 26,7 % ✘ | 69,2 | 33,3 |
+
+Cuatro de las cinco metas se cumplen en los tres presets, ahora con parámetros plausibles. El
+abandono baja un poco respecto del #2c: 14,4 / 16,7 / 26,7 %, contra 15,2 / 18,8 / 31,8 %. Lo hace
+con cupos mucho menos frecuentes (1 de cada 8, contra 1 de cada 2 / 3 / 12) y una demanda
+espontánea dentro del rango de la base.
+
+### 9.5 Parámetros congelados (#2c → #2d)
+
+| Preset | Parámetro | #2c | #2d (congelado) |
+|---|---|---|---|
+| Los tres | `costos.extra` | 750 $/min | **`{ derivado: 1.5 }`** (3.243 / 2.432 / 1.622 $/min según D) |
+| Los tres | regla de cupos | ventana del slot | **acumulable (deuda de cupos)** |
+| Los tres | `cuposEspontaneos.cadaN` | 2 / 3 / 12 | **8** |
+| Consultorio chico | escala de espontáneos | 1,6 × perfil (08–14) = 4× base | **0,46 × perfil (08–14) = 1,15× base** |
+| Policonsultorio | escala de espontáneos | 2 × perfil = 2× base | **0,8 × perfil = 0,8× base** |
+| Centro completo | escala de espontáneos | 1,5 × perfil = 1× base | **1,8 × perfil = 1,2× base** |
+| Los tres | ocupación de la agenda | 1 | 1 (sin cambios) |
+| Los tres | primera vez, paciencia, metas, c_espera, c_perdido, honorario, c_ocio derivado | — | sin cambios |
+
+Demanda espontánea diaria resultante (Λ, llegadas/día):
+
+- chico: 0,46 × 9,5 = 4,4;
+- policonsultorio: 0,8 × 18,5 = 14,8;
+- centro: 1,8 × 18,5 = 33,3.
+
+Cupos por día: 3 por profesional con D = 15 (24 slots), 2 con D = 20 (18 slots) y 1 con D = 30
+(12 slots).
+
+### 9.6 Barrido de control #2d (uno, presets congelados)
+
+Policonsultorio, mismo `k` para los 3 profesionales, política intercalado, 1000 días con números
+aleatorios comunes, semilla 2026500.
+
+- c_ocio: P1 $2.162/min, P2 $1.622/min, P3 $2.162/min.
+- c_extra: P1 $3.243/min, P2 $2.432/min, P3 $3.243/min.
+
+| k | B medio | IC 95 % de B | C medio | IC 95 % de C | Ingresos | Espera $ | Ocio $ | Extra $ | Perdidos $ | Atendidos | Abandonos | Ocio [min] | Extra [min] | Utilización |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | $1.508.921 | [$1.501.613, $1.516.229] | $672.792 | [$665.712, $679.872] | $1.775.610 | $92.206 | $406.103 | $75.563 | $98.920 | 59,2 | 2,02 | 207,3 | 25,7 | 80,8 % |
+| 1 | $1.531.949 | [$1.523.934, $1.539.964] | **$658.824** | [$651.554, $666.095] | $1.847.520 | $118.569 | $343.253 | $91.222 | $105.780 | 61,6 | 2,36 | 174,9 | 31,2 | 83,9 % |
+| 2 | $1.539.812 | [$1.530.896, $1.548.729] | $669.993 | [$661.819, $678.167] | $1.920.360 | $148.143 | $289.445 | $119.905 | $112.500 | 64,0 | 2,70 | 147,0 | 40,9 | 86,5 % |
+| 3 | **$1.540.113** | [$1.529.973, $1.550.254] | $692.403 | [$682.781, $702.025] | $1.994.340 | $178.863 | $238.177 | $157.383 | $117.980 | 66,5 | 2,97 | 121,0 | 54,4 | 89,0 % |
+| 4 | $1.528.919 | [$1.517.542, $1.540.296] | $731.345 | [$720.240, $742.450] | $2.069.640 | $216.452 | $190.624 | $201.168 | $123.100 | 69,0 | 3,23 | 96,3 | 69,2 | 91,4 % |
+| 5 | $1.508.087 | [$1.495.173, $1.521.001] | $787.731 | [$774.754, $800.708] | $2.145.780 | $254.131 | $150.038 | $256.062 | $127.500 | 71,5 | 3,45 | 75,8 | 88,6 | 93,3 % |
+| 6 | $1.458.164 | [$1.443.583, $1.472.745] | $887.472 | [$872.232, $902.712] | $2.222.640 | $300.731 | $122.996 | $332.625 | $131.120 | 74,1 | 3,63 | 61,7 | 114,8 | 94,7 % |
+
+Diferencias pareadas contra k = 0 (mismos días):
+
+| k | ΔB medio | IC 95 % de ΔB | ΔC medio | IC 95 % de ΔC | Δ(C + B) |
+|---|---|---|---|---|---|
+| 1 | $23.028 | [$19.970, $26.086] | −$13.968 | [−$17.504, −$10.431] | $9.060 |
+| 2 | $30.891 | [$25.907, $35.876] | −$2.799 | [−$8.989, $3.392] | $28.093 |
+| 3 | $31.192 | [$24.144, $38.241] | $19.611 | [$10.639, $28.584] | $50.804 |
+| 4 | $19.998 | [$11.037, $28.959] | $58.553 | [$47.048, $70.058] | $78.552 |
+| 5 | −$834 | [−$11.669, $10.001] | $114.939 | [$100.911, $128.967] | $114.105 |
+| 6 | −$50.757 | [−$63.533, −$37.981] | $214.681 | [$198.031, $231.330] | $163.924 |
+
+Diferencias pareadas de B entre k consecutivos:
+
+| Par | ΔB medio | IC 95 % | ¿Significativa? |
+|---|---|---|---|
+| B(1) − B(0) | $23.028 | [$19.970, $26.086] | sí (+) |
+| B(2) − B(1) | $7.864 | [$4.486, $11.241] | sí (+) |
+| B(3) − B(2) | $301 | [−$3.481, $4.084] | **no** |
+| B(4) − B(3) | −$11.194 | [−$15.257, −$7.132] | sí (−) |
+| B(5) − B(4) | −$20.832 | [−$25.112, −$16.553] | sí (−) |
+| B(6) − B(5) | −$49.923 | [−$53.693, −$46.153] | sí (−) |
+
+**Resultado:**
+
+- **k\* según B (criterio de decisión) = 3** en valor medio, pero **empatado con k = 2**: la
+  diferencia pareada B(3) − B(2) no es significativa.
+- A diferencia del #2c, B ahora es **cóncava** en k: sube con rendimientos decrecientes, se aplana
+  en 2–3 y después baja.
+- **k\* según C (contraste) = 1.**
+- La meseta de B en k = 2–3 queda para el #4, que decide con más réplicas y más políticas.
+
+**C + B por k:** $2.181.713 (k = 0) · $2.190.773 · $2.209.805 · $2.232.517 · $2.260.264 ·
+$2.295.818 · $2.345.636 (k = 6), o sea +7,5 % entre k = 0 y k = 6.
+
+**Descomposición** de `Δ(C + B) = honorario·Δatendidos + Δ(costo de ocio)` contra k = 0:
+
+| k | honorario·Δatendidos | Δ costo de ocio | Δ(C + B) | Consultas no compensadas por ocio | Δ horas extra |
+|---|---|---|---|---|---|
+| 1 | $71.910 (2,40 consultas) | −$62.850 (−32,4 min ≈ 2,09 consultas) | $9.060 | 0,30 | 5,4 min |
+| 2 | $144.750 (4,83) | −$116.657 (−60,3 min ≈ 3,89) | $28.093 | 0,94 | 15,2 min |
+| 3 | $218.730 (7,29) | −$167.926 (−86,3 min ≈ 5,60) | $50.804 | 1,69 | 28,7 min |
+| 4 | $294.030 (9,80) | −$215.478 (−111,1 min ≈ 7,18) | $78.552 | 2,62 | 43,5 min |
+| 5 | $370.170 (12,34) | −$256.065 (−131,6 min ≈ 8,54) | $114.105 | 3,80 | 62,9 min |
+| 6 | $447.030 (14,90) | −$283.106 (−145,6 min ≈ 9,44) | $163.924 | 5,46 | 89,1 min |
+
+Las "consultas no compensadas por ocio" son Δatendidos menos el ocio recuperado dividido por la
+duración media. Son las consultas que se hicieron en horas extra o que duraron menos que la media;
+son las que separan C + B de una constante, y crecen con k junto con las horas extra.
+
+Con c_extra coherente, cada minuto extra cuesta $3.243 en P1, así que una consulta de 13,9 min en
+horas extra cuesta ≈ $45.000, más que el honorario de $30.000. Por eso B ya no premia la hora
+extra, y su óptimo baja respecto del #2c. **Ese cambio no se puede atribuir solo a c_extra**: en el
+mismo paso cambiaron también la regla de cupos y los presets.
+
+### 9.7 Limitaciones que quedan (no se sigue iterando)
+
+1. **Abandono de los espontáneos: 14,4 % (chico), 16,7 % (policonsultorio) y 26,7 % (centro),
+   contra la meta < 5 %.** Es una limitación del modelo, no un error, y se documenta así. Con los
+   límites de plausibilidad, una utilización ≥ 80 % exige bastante demanda espontánea para llenar
+   los cupos y los huecos de los ausentes, y con esa demanda la sala se congestiona en las horas
+   pico. El 100 % de los abandonos ocurre en la sala.
+2. **Una misma política de cupos para todos los profesionales no sigue la demanda de cada
+   especialidad** (500 días, semilla de exploración):
+
+   | Preset | Especialidad | Espontáneos que entran/día | Cupos/día | Abandono |
+   |---|---|---|---|---|
+   | Centro | clínica | 17,4 | 6 (3 por profesional) | 30,3 % |
+   | Centro | ginecología | 0,5 | 2 | 5,7 % |
+   | Policonsultorio | clínica | 9,4 | 6 | 17,8 % |
+   | Policonsultorio | pediatría | 2,3 | 2 | 15,2 % |
+
+   Un N por especialidad acompañaría mejor la demanda, pero queda fuera de los límites de
+   plausibilidad acordados.
+3. **Los presets quedan en el borde inferior de la meta de utilización (80,6–80,9 %)**: minimizar
+   el abandono empuja hacia menos demanda espontánea.
+4. **c_extra = 1,5 × c_ocio es una convención, no un dato.** El #4 informa la sensibilidad de k\* al
+   factor (1 a 2).
+
+Los presets quedan **congelados** desde este paso (ver `CLAUDE.md`).

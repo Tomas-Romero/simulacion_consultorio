@@ -136,8 +136,11 @@ export const EsquemaEscenario = z
        * oportunidad de cada profesional: honorario / duración media de sus consultas con turno.
        */
       ocio: z.union([noNegativo, z.literal('derivado')]),
-      /** $ por minuto de hora extra. */
-      extra: noNegativo,
+      /**
+       * $ por minuto de hora extra. `{ derivado: factor }` = factor × c_ocio de cada profesional
+       * (coherencia: la hora extra cuesta al menos lo que la normal, por eso factor ≥ 1).
+       */
+      extra: z.union([noNegativo, z.object({ derivado: z.number().min(1).max(5).default(1.5) })]),
       /** $ por paciente no atendido. */
       perdido: noNegativo,
       /** $ que se cobra por consulta. */

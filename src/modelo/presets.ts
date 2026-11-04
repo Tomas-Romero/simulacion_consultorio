@@ -93,18 +93,23 @@ function base(nombre: string, descripcion: string, profesionales: Profesional[],
     },
     admision: { recepcionistas, tiempo: { tipo: 'triangular', min: 1, moda: 2, max: 5 } },
     // c_ocio derivado = honorario / duración media de la consulta de cada profesional (antes 500 $/min fijo).
-    costos: { espera: 150, ocio: 'derivado', extra: 750, perdido: 20000, honorario: 30000 },
+    // c_extra derivado = 1,5 × c_ocio de cada profesional (#2d, coherencia c_extra ≥ c_ocio; antes 750 $/min fijo).
+    costos: { espera: 150, ocio: 'derivado', extra: { derivado: 1.5 }, perdido: 20000, honorario: 30000 },
   });
 }
 
-/** Valores de calibración vigentes (los anteriores están en docs/calibracion.md). */
+/**
+ * Valores de calibración CONGELADOS desde el #2d (iteración de validación 3): no se recalibran más.
+ * Historia en docs/calibracion.md.
+ */
 export const CALIBRACION_PRESETS: Record<'chico' | 'policonsultorio' | 'centro', CalibracionPreset> = {
   // Antes de #2b: primera vez 0,4 en los tres y demanda espontánea todo el día en el consultorio chico.
-  // #2c (iteración de validación 2): cupos de demanda espontánea y tasa de espontáneos recalibrados.
-  // Antes de #2c: sin cupos y escala de espontáneos 0,4 / 1 / 1,5.
-  chico: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1.6, horasEspontaneos: 6, ocupacionAgenda: 1, cuposCadaN: 2 },
-  policonsultorio: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 2, horasEspontaneos: 12, ocupacionAgenda: 1, cuposCadaN: 3 },
-  centro: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1.5, horasEspontaneos: 12, ocupacionAgenda: 1, cuposCadaN: 12 },
+  // #2b: escala de espontáneos 0,4 / 1 / 1,5 (perfil base de cada preset), sin cupos.
+  // #2c: cupos 1 de cada 2 / 3 / 12 y escala 1,6 / 2 / 1,5.
+  // #2d: la misma política de cupos en los tres (1 de cada 8, acumulables) y escala 1,15× / 0,8× / 1,2× del perfil base.
+  chico: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 0.46, horasEspontaneos: 6, ocupacionAgenda: 1, cuposCadaN: 8 },
+  policonsultorio: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 0.8, horasEspontaneos: 12, ocupacionAgenda: 1, cuposCadaN: 8 },
+  centro: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1.8, horasEspontaneos: 12, ocupacionAgenda: 1, cuposCadaN: 8 },
 };
 
 export const PRESET_CONSULTORIO_CHICO = base(
@@ -129,7 +134,7 @@ export const PRESET_POLICONSULTORIO_3 = base(
 
 export const PRESET_CENTRO_6 = base(
   'Centro completo (6 profesionales)',
-  'Seis profesionales en los dos turnos y dos recepcionistas; demanda espontánea un 50 % mayor.',
+  'Seis profesionales en los dos turnos y dos recepcionistas; demanda espontánea un 80 % mayor que el perfil base.',
   [
     profesional('P1', 'Clínica mañana', 'clinica', 'manana', 15),
     profesional('P2', 'Pediatría mañana', 'pediatria', 'manana', 20),

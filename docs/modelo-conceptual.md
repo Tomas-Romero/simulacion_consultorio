@@ -17,7 +17,8 @@ ubican mal, crecen las esperas, las horas extra y los pacientes que se van sin a
 - `k`: cantidad de sobreturnos (0, 1, 2, …).
 - Política de ubicación: `inicio`, `intercalado`, `mayor_ausentismo` o `final` (sección 5).
 
-**Criterio PRINCIPAL — beneficio neto esperado por día** (se maximiza):
+**Criterio ÚNICO de decisión: beneficio neto esperado por día** (se maximiza; definido en el #2c,
+y desde el #2d es el único que decide; todo k* sale de B):
 
 ```
 B = ingresos − c_espera · Σ espera de los atendidos − c_extra · horas extra − c_perdido · perdidos
@@ -27,24 +28,34 @@ B = ingresos − c_espera · Σ espera de los atendidos − c_extra · horas ext
 El ocio **no se resta** en B: ya está reflejado en las consultas que no se facturan; restarlo
 sería contarlo dos veces. Se sigue informando como indicador.
 
-**Criterio SECUNDARIO — costo clásico de la bibliografía de agendamiento** (se minimiza):
+**Contraste: costo clásico de la bibliografía de agendamiento** (se informa junto a B, pero
+no decide):
 
 ```
 C = c_espera · Σ espera + c_ocio · ocio + c_extra · horas extra + c_perdido · perdidos
 ```
 
-con `c_ocio` **derivado** por defecto: el costo de oportunidad de cada profesional,
-`c_ocio = honorario / duración media de sus consultas con turno = honorario / (D · (p·1,3 + (1 − p)·0,8))`
-(con p = 0,25: D = 15 → $2.162/min; D = 20 → $1.622/min; D = 30 → $1.081/min).
+Costos derivados por profesional (valores por defecto):
 
-**Equivalencia (aproximada).** Sumando, `C + B = ingresos + c_ocio · ocio = honorario × (atendidos + ocio / duración media)`:
-el ingreso de las consultas hechas más el de las que se podrían haber hecho en el tiempo ocioso,
-es decir, la capacidad del turno valuada a honorario. Si esa capacidad fuera fija, `C + B` sería
-constante entre escenarios y maximizar B equivaldría a minimizar C. No es exacta porque (1) las
-consultas hechas en **horas extra** agregan ingreso sin reducir el ocio, que solo se mide dentro
-del turno; (2) las consultas que se ganan no duran exactamente la media (los espontáneos duran
-0,8·D) y (3) cambian los abandonos. El barrido de control del #2c mide la diferencia
-(`calibracion.md`, sección 8).
+- `c_ocio` = costo de oportunidad = `honorario / duración media de sus consultas con turno =
+  honorario / (D · (p·1,3 + (1 − p)·0,8))`. Con p = 0,25: D = 15 → $2.162/min; D = 20 → $1.622/min;
+  D = 30 → $1.081/min.
+- `c_extra` = `factor × c_ocio`, con factor 1,5: D = 15 → $3.243/min; D = 20 → $2.432/min;
+  D = 30 → $1.622/min.
+- **Principio de coherencia: `c_extra ≥ c_ocio`.** Un minuto de hora extra no puede costar menos
+  que un minuto del turno normal. Si costara menos, para el modelo la hora extra sería negocio.
+  El esquema exige factor ≥ 1. Esta corrección se hizo en el #2d, **después** del barrido del #2c
+  (que tenía c_extra = $750/min < c_ocio), motivada por este principio y **no por el valor de k\***
+  que dio ese barrido. El #4 incluye la sensibilidad al factor (1 a 2).
+
+**Relación entre B y C.** Sumando, `C + B = ingresos + c_ocio · ocio`. Esta suma es **constante
+solo si cada consulta adicional ocurre dentro del turno y con la duración media**: entonces cada
+consulta ganada suma `honorario` a los ingresos y resta exactamente `honorario` al costo de ocio.
+Las consultas hechas en **horas extra** suman ingreso sin reducir el ocio, que solo se mide dentro
+del turno. Las consultas **más cortas** que la media (los espontáneos duran 0,8·D) suman más ingreso
+del que descuentan de ocio. Ambas rompen la equivalencia, y por eso B y C pueden recomendar k
+distintos (`calibracion.md`, secciones 8 y 9.6). Esto reemplaza la afirmación anterior de que
+`C + B` era aproximadamente constante.
 
 ## 2. Tipo de simulación y horizonte
 
@@ -71,21 +82,26 @@ importa y exporta. Contiene:
 | `puntualidad` | distribución del desvío, tolerancia, política de tardíos, ¿se adelantan turnos? |
 | `espontaneos` | tasas por hora, mezcla por especialidad, % de urgencias, ¿abandonan?, paciencia, cierre antes del fin |
 | `admision` | recepcionistas (1–2; 0 solo en validación), distribución del tiempo de atención |
-| `costos` | c_espera, c_ocio (número o `'derivado'`), c_extra, c_perdido, honorario |
+| `costos` | c_espera, c_ocio (número o `'derivado'`), c_extra (número o `{ derivado: factor }`, factor ≥ 1), c_perdido, honorario |
 
 Los tiempos aleatorios se declaran como datos (`constante`, `uniforme`, `triangular`,
 `exponencial`, `normal_truncada`, `lognormal`), así un mismo esquema sirve para el modelo
 real y para los casos de validación.
 
-**Presets** (`src/modelo/presets.ts`): *Consultorio chico* (1 clínico de mañana, 1
-recepcionista, cupos 1 de cada 2 slots, demanda espontánea 1,6 × el perfil base y solo de 08 a
-14), *Policonsultorio* (clínica mañana y tarde + pediatría mañana, 1 recepcionista, cupos 1 de
-cada 3, demanda espontánea 2 × el perfil base; es el **escenario por defecto**) y *Centro
-completo* (6 profesionales, 2 recepcionistas, cupos 1 de cada 12, demanda espontánea 1,5 × el
-perfil base). Los tres parten de **k = 0** (situación inicial) y están calibrados para una
-operación plausible: utilización 80–88 %, ausentismo 12–18 %, espera de turnos 5–15 min y menos de
-20 min de horas extra por médico (ver [`calibracion.md`](calibracion.md); la meta de abandono
-< 5 % no se alcanza, S31).
+**Presets** (`src/modelo/presets.ts`, **congelados desde el #2d**, S36). Los tres tienen cupos
+acumulables 1 de cada 8 slots y ocupación de la agenda 1:
+
+- *Consultorio chico*: 1 clínico de mañana, 1 recepcionista, demanda espontánea 0,46 × el perfil,
+  solo de 08 a 14, que equivale a 1,15× su base.
+- *Policonsultorio*: clínica mañana y tarde + pediatría mañana, 1 recepcionista, demanda
+  espontánea 0,8 × el perfil. Es el **escenario por defecto**.
+- *Centro completo*: 6 profesionales, 2 recepcionistas, demanda espontánea 1,8 × el perfil, que
+  equivale a 1,2× su base.
+
+Los tres parten de **k = 0** (situación inicial) y están calibrados para una operación plausible:
+utilización 80–88 %, ausentismo 12–18 %, espera de turnos 5–15 min y menos de 20 min de horas extra
+por médico (ver [`calibracion.md`](calibracion.md)). La meta de abandono < 5 % no se alcanza y
+queda como limitación (S31).
 
 ## 4. Entidades, atributos y recursos
 
@@ -162,10 +178,12 @@ Así un espontáneo tiene el mismo factor lo atienda quien lo atienda.
    (a) y (d) solo si es **responsable** de la especialidad: está en turno, o ya terminó y no
    hay otro profesional de la especialidad en turno (S22). Cuando llega un paciente a una cola
    compartida, se le ofrece primero al profesional libre hace más tiempo (S23).
-   **Durante la ventana de un cupo** de demanda espontánea del profesional (el intervalo
-   `[inicio + j·D, inicio + (j+1)·D)` de un slot cupo), el orden pasa a ser (a) urgencias,
-   (d) espontáneos, (b) puntuales, (c) tardíos. Si no hay espontáneos esperando, rige el orden
-   normal y el cupo no se desperdicia (S33).
+   **Cupos acumulables.** Cada profesional lleva su **deuda de cupos** = (cupos de su agenda
+   cuya hora de inicio `inicio + j·D` ya pasó) − (espontáneos que atendió usando cupo). Si es
+   responsable, tiene deuda > 0 y hay un espontáneo de su especialidad esperando, el orden pasa a
+   ser (a) urgencias, (d) espontáneos, (b) puntuales, (c) tardíos, y esa consulta **consume un
+   cupo**. Si no, rige el orden normal: el cupo no se desperdicia, y un espontáneo atendido por la
+   regla (d) sin deuda (en un hueco) no consume cupo. Las urgencias no consumen cupos (S33).
 5. **Abandono:** los espontáneos no urgentes abandonan cuando el tiempo desde su llegada
    supera la paciencia (lognormal, media 60 min, CV 0,5; configurable). En la cola de admisión o en la sala se
    van en el acto; durante la atención en admisión no, pero si al terminarla ya agotaron la
@@ -195,7 +213,7 @@ Así un espontáneo tiene el mismo factor lo atienda quien lo atienda.
 
 Reloj; estado de cada médico; colas de urgencias y espontáneos por especialidad; colas de
 puntuales y tardíos por médico; recepcionistas ocupados y cola de admisión; pacientes en
-admisión, en sala y en consulta; acumuladores de ocio, tiempo ocupado y marcas de tiempo.
+admisión, en sala y en consulta; cupos usados por cada médico (para su deuda de cupos); acumuladores de ocio, tiempo ocupado y marcas de tiempo.
 
 ## 10. Medidas de desempeño (por día, por profesional y totales)
 
@@ -211,9 +229,9 @@ admisión, en sala y en consulta; acumuladores de ocio, tiempo ocupado y marcas 
   atención / (recepcionistas × duración del día).
 - **Atendidos por clase, ausentes** (no-show, **no** son pérdidas) y **perdidos por motivo**:
   `tardio_rechazado`, `abandono`, `fuera_de_horario`, `sin_profesional`.
-- **Beneficio neto B** (criterio principal) e **ingresos**; **costo clásico C** (criterio
-  secundario) por componente: espera de los atendidos, ocio (con el `c_ocio` de cada
-  profesional), extra y perdidos (S26, S34). Por profesional, B y C cuentan solo sus pérdidas
+- **Beneficio neto B** (criterio único de decisión) e **ingresos**; **costo clásico C**
+  (contraste) por componente: espera de los atendidos, ocio (con el `c_ocio` de cada
+  profesional), extra (con el `c_extra` de cada profesional) y perdidos (S26, S34, S35). Por profesional, B y C cuentan solo sus pérdidas
   propias (tardíos rechazados); en el total entran todas.
 - **Serie temporal** cada 5 min de pacientes en admisión, en sala y en consulta.
 - **Ley de Little del día:** `L = ∫N(t)dt / T`, `λ = n / T`, `W = Σ permanencias / n`.
@@ -233,8 +251,9 @@ admisión, en sala y en consulta; acumuladores de ocio, tiempo ocupado y marcas 
 | Urgencias | Bernoulli | 10 % de los espontáneos |
 | Paciencia | Lognormal (configurable: lognormal o exponencial) | media 60 min, CV 0,5: P(< 20 min) ≈ 1,8 %, P(< 30 min) ≈ 11 % (antes exponencial de media 45: P(< 5 min) = 10,5 %) (S24) |
 | Admisión | Triangular | 1 – 2 – 5 min |
-| Costos | constantes (ARS) | honorario 30 000; c_espera 150/min; c_extra 750/min; c_perdido 20 000; c_ocio derivado = honorario / duración media (D = 15 → 2 162/min, D = 20 → 1 622/min, D = 30 → 1 081/min; antes 500/min fijo) (S14, S34) |
-| Cupos de demanda espontánea | 1 de cada N slots | chico N = 2, policonsultorio N = 3, centro N = 12 (S33) |
+| Costos | constantes (ARS) | honorario 30 000; c_espera 150/min; c_perdido 20 000; c_ocio derivado = honorario / duración media (D = 15 → 2 162/min, D = 20 → 1 622/min, D = 30 → 1 081/min; antes 500/min fijo); c_extra derivado = 1,5 × c_ocio (D = 15 → 3 243/min, D = 20 → 2 432/min, D = 30 → 1 622/min; antes 750/min fijo) (S14, S34, S35) |
+| Cupos de demanda espontánea | 1 de cada N slots, acumulables | N = 8 en los tres presets (antes 2 / 3 / 12) (S33) |
+| Escala de la demanda espontánea | factor sobre el perfil | chico 0,46 (08–14), policonsultorio 0,8, centro 1,8 (S36) |
 
 **Calibración del ausentismo:** `p(1) = 0,08` y `p(30) = 0,30` ⇒ `β₁ = 0,05500`, `β₀ = −2,4973`
 (p(7) = 0,108; p(14) = 0,151). Fuera de [1, 30] días la logística extrapola (p(60) = 0,69),
@@ -272,10 +291,12 @@ por eso la anticipación se limita a ese rango.
 - **S28.** La admisión atiende desde la primera llegada del día (no tiene horario de apertura).
 - **S29.** Solo para validación: 0 recepcionistas = sin admisión; β₀ = −50 equivale a ausentismo nulo (p ≈ 2·10⁻²²).
 - **S30.** La situación inicial de los presets no tiene sobreturnos (`k = 0`): son la variable de decisión. El consultorio chico abre solo de mañana, así que no tiene demanda espontánea de 14 a 20.
-- **S31.** Aun con cupos y paciencia lognormal, un espontáneo que llega fuera de la ventana de un cupo espera a la próxima ventana o a un hueco de la agenda: el abandono de la situación inicial queda en ≈ 15 % (chico), 19 % (policonsultorio) y 32 % (centro). La meta de calibración (< 5 %) no se alcanza con las palancas permitidas (ver `calibracion.md`, secciones 5 y 7).
+- **S31.** **Limitación del modelo:** aun con cupos acumulables y paciencia lognormal, el abandono de la situación inicial queda en 14,4 % (chico), 16,7 % (policonsultorio) y 26,7 % (centro), contra una meta de < 5 %. Con los límites de plausibilidad, una utilización ≥ 80 % exige bastante demanda espontánea para llenar cupos y huecos, y en las horas pico la sala se congestiona. La misma política de cupos para todos no sigue la demanda de cada especialidad: clínica concentra la demanda y el abandono. No se sigue iterando (ver `calibracion.md`, secciones 5, 7 y 9.7).
 - **S32.** Las urgencias tienen prioridad en las colas, pero no interrumpen una consulta en curso: esperan a que el médico de su especialidad quede libre (con la cola de la lognormal, una consulta larga puede demorarlas bastante).
-- **S33.** Cupos de demanda espontánea: 1 de cada N slots por profesional (equiespaciados, `j mod N = ⌊N/2⌋`). No se reservan para turnos ni reciben sobreturnos superpuestos. Durante su ventana, el orden de selección es (a) urgencias, (d) espontáneos, (b) puntuales, (c) tardíos; si no hay espontáneos esperando, rige el orden normal. Fuera de las ventanas de cupo la regla no cambia.
-- **S34.** El costo de ocio es el costo de oportunidad de cada profesional (`honorario / duración media de sus consultas con turno`), no un valor fijo: el $500/min del #2 subvaluaba el ocio frente a lo que genera un minuto de consulta (≈ $2.160/min con D = 15). Solo entra en el costo clásico C; el criterio principal es el beneficio B.
+- **S33.** Cupos de demanda espontánea: 1 de cada N slots por profesional (equiespaciados, `j mod N = ⌊N/2⌋`). No se reservan para turnos ni reciben sobreturnos superpuestos. Son **acumulables** (#2d; reemplaza la regla de ventana del #2c). Mientras el profesional tenga deuda de cupos (cupos ya iniciados − espontáneos que atendió con cupo) y haya un espontáneo de su especialidad esperando, el orden de selección es (a) urgencias, (d) espontáneos, (b) puntuales, (c) tardíos, y esa consulta consume un cupo. Sin deuda rige el orden normal. Un cupo que pasa sin espontáneos no se pierde: lo usa el próximo que llegue.
+- **S34.** El costo de ocio es el costo de oportunidad de cada profesional (`honorario / duración media de sus consultas con turno`), no un valor fijo: el $500/min del #2 subvaluaba el ocio frente a lo que genera un minuto de consulta (≈ $2.160/min con D = 15). Solo entra en el costo clásico C, que es un contraste; el criterio único de decisión es el beneficio B.
+- **S35.** **Coherencia de costos:** `c_extra ≥ c_ocio`. Por defecto, `c_extra = 1,5 × c_ocio` de cada profesional (convención de la bibliografía: la hora extra cuesta más que la normal). Reemplaza a los $750/min fijos, que eran menos que el c_ocio derivado y hacían de la hora extra un negocio. La corrección se hizo después del barrido del #2c, por este principio y no por el k* que dio ese barrido. El factor es una convención: el #4 informa la sensibilidad entre 1 y 2.
+- **S36.** **Presets congelados (#2d).** La calibración terminó con límites de plausibilidad: la misma política de cupos en los tres presets (1 de cada 3 a 1 de cada 8), escala de espontáneos entre 0,5× y 1,5× del perfil base de cada preset y ocupación entre 0,85 y 1. Resultado: cupos 1 de cada 8, escala 1,15× / 0,8× / 1,2× de la base y ocupación 1. Desde el #4 los presets no se recalibran.
 
 ## 13. Flujo del paciente
 

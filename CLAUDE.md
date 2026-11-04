@@ -54,14 +54,25 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - **Unidad de tiempo del modelo:** minutos (desde las 00:00 en el consultorio).
 - **Datos:** todos ficticios y marcados como supuestos hasta que se importen datos reales.
 
-## Criterio de decisión (definido en #2c)
+## Criterio de decisión (definido en #2c, cerrado en #2d)
 
-- **Principal:** beneficio neto esperado `B = ingresos − c_espera·espera − c_extra·extra − c_perdido·perdidos`
-  (el ocio no se resta).
-- **Secundario:** costo clásico `C = c_espera·espera + c_ocio·ocio + c_extra·extra + c_perdido·perdidos`,
-  con `c_ocio` derivado = honorario / duración media de la consulta de cada profesional.
-- Detalle y equivalencia aproximada `C + B ≈ constante` en `docs/modelo-conceptual.md` (sección 1)
-  y `docs/calibracion.md` (sección 8).
+- **Criterio ÚNICO de decisión:** beneficio neto esperado
+  `B = ingresos − c_espera·espera − c_extra·extra − c_perdido·perdidos` (el ocio no se resta).
+  Todo k* y toda recomendación salen de B.
+- **Contraste (solo se informa, no decide):** costo clásico
+  `C = c_espera·espera + c_ocio·ocio + c_extra·extra + c_perdido·perdidos`.
+- `c_ocio` derivado = honorario / duración media de la consulta con turno de cada profesional;
+  `c_extra` derivado = factor × c_ocio (factor 1,5 por defecto; coherencia c_extra ≥ c_ocio).
+  El #4 incluye la sensibilidad al factor (1 a 2).
+- `C + B = ingresos + c_ocio·ocio` NO es constante: solo lo sería si cada consulta adicional
+  ocurriera dentro del turno y con la duración media (ver `docs/modelo-conceptual.md`, sección 1).
+
+## Presets CONGELADOS (desde #2d)
+
+- La calibración de los presets terminó en el #2d (iteración de validación 3). Sus parámetros
+  quedan **congelados**: no se recalibran ni se ajustan para mejorar resultados del #4 en adelante.
+- Lo que quedó fuera de meta (el abandono) es una **limitación documentada del modelo**
+  (`docs/calibracion.md`, sección 9), no algo a seguir iterando.
 
 ## Identidad visual para el #3 (decidida, todavía NO implementada)
 
@@ -96,7 +107,7 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `npm run rendimiento` — ms por día simulado para cada preset
 - `npm run calibrar -- [semilla] [días]` — situación inicial de los presets contra las metas de
   calibración (ver `docs/calibracion.md`)
-- `npm run barrido-control` — barrido de control k = 0–6 con B y C del #2c (no es el experimento del #4)
+- `npm run barrido-control` — barrido de control k = 0–6 con B y C (#2d, presets congelados; no es el experimento del #4)
 - `npm run cobertura` — estudio de cobertura del IC 95 % con 20 semillas (~40 s)
 
 ## Entorno

@@ -11,12 +11,15 @@
  * puntuales, (c) sus tardíos, (d) espontáneos de su especialidad. (a) y (d) solo
  * si es "responsable" de la especialidad: está en turno, o ya terminó y no queda
  * otro profesional de la especialidad en turno.
+ * Cupos acumulables: cada profesional lleva su deuda de cupos = (cupos cuya hora de
+ * inicio ya pasó) − (espontáneos que atendió usando cupo). Con deuda > 0 y un
+ * espontáneo esperando, el orden es (a), (d), (b), (c), y esa consulta consume un cupo.
  */
 import { MonticuloBinario, Recurso, Simulador, type EventoProgramado, type Solicitud } from '../motor';
 import { generarDia, type DiaGenerado, type PacienteGenerado } from './agenda';
 import type { Especialidad, Profesional } from './escenario';
 import { calcularMetricas, esperaDe, type MetricasDia } from './metricas';
-import type { EscenarioPreparado } from './preparar';
+import { iniciosCupos, type EscenarioPreparado } from './preparar';
 import {
   PRIORIDAD_CLASE,
   type Clase,
@@ -67,6 +70,10 @@ export interface ProfesionalSim {
   readonly puntuales: MonticuloBinario<PacienteSim>;
   readonly tardios: ColaFifo;
   readonly propios: PacienteSim[];
+  /** Hora absoluta de inicio de cada cupo de su agenda (ordenadas). */
+  readonly iniciosCupos: readonly number[];
+  /** Espontáneos atendidos por él usando cupo. */
+  cuposUsados: number;
 }
 
 /** Cola FIFO con borrado perezoso (los que abandonan se saltean al sacar). */
@@ -156,6 +163,8 @@ export function simularDia(prep: EscenarioPreparado, opciones: OpcionesDia): Res
     puntuales: new MonticuloBinario<PacienteSim>((a, b) => a.horaTurno! - b.horaTurno! < 0 || (a.horaTurno === b.horaTurno && a.id < b.id)),
     tardios: new ColaFifo(),
     propios: [],
+    iniciosCupos: iniciosCupos(prep.esCupo[idx]!, cfg.duracionTurno).map((m) => prep.turnos[idx]!.inicio + m),
+    cuposUsados: 0,
   }));
   const porEspecialidad = new Map<Especialidad, ProfesionalSim[]>();
   for (const p of profs) {
@@ -237,11 +246,11 @@ export function simularDia(prep: EscenarioPreparado, opciones: OpcionesDia): Res
     if (hasta > desde) p.ocio += hasta - desde;
   };
 
-  /** ¿El reloj está dentro de la ventana de un cupo de demanda espontánea de p? */
-  const enCupo = (p: ProfesionalSim): boolean => {
-    const j = Math.floor((sim.reloj - p.inicioTurno) / p.cfg.duracionTurno);
-    const cupos = prep.esCupo[p.idx]!;
-    return j >= 0 && j < cupos.length && cupos[j]!;
+  /** Deuda de cupos de p: cupos cuya hora de inicio ya pasó − espontáneos atendidos con cupo. */
+  const deudaCupos = (p: ProfesionalSim): number => {
+    let vencidos = 0;
+    while (vencidos < p.iniciosCupos.length && p.iniciosCupos[vencidos]! <= sim.reloj) vencidos++;
+    return vencidos - p.cuposUsados;
   };
 
   const proximoPara = (p: ProfesionalSim): PacienteSim | undefined => {
@@ -250,10 +259,13 @@ export function simularDia(prep: EscenarioPreparado, opciones: OpcionesDia): Res
     if (resp) {
       const u = colaUrgencias.get(esp)!.sacar();
       if (u) return u;
-      // Durante un cupo de demanda espontánea: (a) urgencias, (d) espontáneos, (b) puntuales, (c) tardíos.
-      if (enCupo(p)) {
+      // Con cupos adeudados: (a) urgencias, (d) espontáneos, (b) puntuales, (c) tardíos; consume un cupo.
+      if (deudaCupos(p) > 0) {
         const e = colaEspontaneos.get(esp)!.sacar();
-        if (e) return e;
+        if (e) {
+          p.cuposUsados++;
+          return e;
+        }
       }
     }
     const puntual = p.puntuales.extraerMinimo();

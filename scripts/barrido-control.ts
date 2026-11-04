@@ -1,8 +1,8 @@
 /**
- * Barrido de control (#2c): con la calibración congelada, k = 0..6 sobreturnos por
+ * Barrido de control (#2d): con los presets congelados, k = 0..6 sobreturnos por
  * profesional con política "intercalado" en el escenario por defecto, 1000 días
  * con números aleatorios comunes (misma semilla y réplica para cada k).
- * Informa el beneficio neto B (criterio principal) y el costo clásico C (secundario).
+ * Informa el beneficio neto B (criterio único de decisión) y el costo clásico C (contraste).
  * Solo confirma si el problema de decisión es trivial; NO es el experimento del #4.
  * Uso: npm run barrido-control -- [semilla]
  */
@@ -10,7 +10,7 @@ import { intervaloConfianza } from '../src/motor';
 import { ESCENARIO_POR_DEFECTO, EsquemaEscenario, prepararEscenario, simularDia } from '../src/modelo';
 
 const DIAS = 1000;
-const SEMILLA = Number(process.argv[2] ?? 2026400);
+const SEMILLA = Number(process.argv[2] ?? 2026500);
 const KS = [0, 1, 2, 3, 4, 5, 6];
 const $ = (x: number): string => '$' + Math.round(x).toLocaleString('es-AR');
 const ic$ = (ic: { inferior: number; superior: number }): string => `[${$(ic.inferior)}, ${$(ic.superior)}]`;
@@ -28,7 +28,8 @@ type Fila = (typeof resultados)[number]['filas'][number];
 const media = (filas: Fila[], f: (m: Fila) => number): number => filas.reduce((s, m) => s + f(m), 0) / filas.length;
 
 console.log(`Barrido de control — ${ESCENARIO_POR_DEFECTO.nombre}, política intercalado, ${DIAS} días, semilla ${SEMILLA}, NAC`);
-console.log(`c_ocio derivado por profesional: ${ESCENARIO_POR_DEFECTO.profesionales.map((p, i) => `${p.id} ${$(prep0.cOcio[i]!)}/min`).join(', ')}\n`);
+console.log(`c_ocio derivado por profesional: ${ESCENARIO_POR_DEFECTO.profesionales.map((p, i) => `${p.id} ${$(prep0.cOcio[i]!)}/min`).join(', ')}`);
+console.log(`c_extra derivado por profesional: ${ESCENARIO_POR_DEFECTO.profesionales.map((p, i) => `${p.id} ${$(prep0.cExtra[i]!)}/min`).join(', ')}\n`);
 
 console.log('| k | B medio | IC 95 % de B | C medio | IC 95 % de C | Ingresos | Espera $ | Ocio $ | Extra $ | Perdidos $ | Atendidos | Abandonos | Ocio [min] | Extra [min] | Utilización |');
 console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
@@ -67,8 +68,11 @@ for (const { k, filas } of resultados.slice(1)) {
   const dAt = media(filas, (m) => m.atendidosTotal) - media(base, (m) => m.atendidosTotal);
   const dOcio = media(filas, (m) => m.costos.ocio) - media(base, (m) => m.costos.ocio);
   const dExtra = media(filas, (m) => m.horasExtra) - media(base, (m) => m.horasExtra);
+  const dOcioMin = media(filas, (m) => m.ocio) - media(base, (m) => m.ocio);
+  const hon = ESCENARIO_POR_DEFECTO.costos.honorario;
   console.log(
-    `  k = ${k}: honorario·Δatendidos ${$(ESCENARIO_POR_DEFECTO.costos.honorario * dAt)} (${dAt.toFixed(2)} consultas) + Δ costo de ocio ${$(dOcio)} = ${$(ESCENARIO_POR_DEFECTO.costos.honorario * dAt + dOcio)} · Δ horas extra ${dExtra.toFixed(1)} min`,
+    `  k = ${k}: honorario·Δatendidos ${$(hon * dAt)} (${dAt.toFixed(2)} consultas) + Δ costo de ocio ${$(dOcio)} (${dOcioMin.toFixed(1)} min ≈ ${(-dOcio / hon).toFixed(2)} consultas) = ${$(hon * dAt + dOcio)} · ` +
+      `consultas no compensadas por ocio ${(dAt + dOcio / hon).toFixed(2)} · Δ horas extra ${dExtra.toFixed(1)} min`,
   );
 }
 
