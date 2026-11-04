@@ -1,0 +1,88 @@
+// Capturas de docs/capturas/ con Chrome headless (CDP). Requiere `npm run dev` en el puerto 5173.
+// Uso: npm run capturas [-- <filtro>]   (CHROME=ruta para otro navegador)
+import { spawn } from 'node:child_process';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const CHROME = process.env.CHROME ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const BASE = 'http://localhost:5173/';
+const SALIDA = 'docs/capturas';
+const FILTRO = process.argv[2] ?? '';
+mkdirSync(SALIDA, { recursive: true });
+const PUERTO = 9300 + (process.pid % 600); // un puerto por proceso: evita chocar con un Chrome que todavía se está cerrando
+const perfil = mkdtempSync(join(tmpdir(), 'chrome-cap-'));
+const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${PUERTO}`, `--user-data-dir=${perfil}`, '--hide-scrollbars', '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+let info;
+for (let i = 0; i < 50 && !info; i++) {
+  try {
+    info = await (await fetch(`http://127.0.0.1:${PUERTO}/json/list`)).json();
+  } catch {
+    await espera(200);
+  }
+}
+const ws = new WebSocket(info.find((t) => t.type === 'page').webSocketDebuggerUrl);
+await new Promise((r) => ws.addEventListener('open', r));
+let id = 0;
+const pend = new Map();
+ws.addEventListener('message', (e) => {
+  const m = JSON.parse(e.data);
+  if (m.id && pend.has(m.id)) {
+    pend.get(m.id)(m);
+    pend.delete(m.id);
+  }
+});
+const cdp = (method, params = {}) => new Promise((r) => { const n = ++id; pend.set(n, r); ws.send(JSON.stringify({ id: n, method, params })); });
+const evaluar = async (expr) => (await cdp('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true })).result?.result?.value;
+
+// [archivo, ruta, tema, ancho, alto, página completa, preparación (JS), espera ms]
+const CAPTURAS = [
+  ['01-inicio-claro', '', 'claro', 1440, 900, false, '', 2500],
+  ['02-inicio-oscuro', '', 'oscuro', 1440, 900, false, '', 2500],
+  ['03-inicio-completo-claro', '', 'claro', 1440, 900, true, '', 2500],
+  ['04-escenario-claro', '#/escenario', 'claro', 1440, 900, true, '', 1500],
+  ['05-escenario-oscuro', '#/escenario', 'oscuro', 1440, 900, false, '', 1500],
+  ['06-escenario-error-claro', '#/escenario', 'claro', 1440, 900, false, "__app.editarEscenario(e => ({...e, pacientes: {...e.pacientes, proporcionPrimeraVez: 1.4}})); setTimeout(() => document.querySelector('.campo.con-error').scrollIntoView({block: 'center'}), 300)", 1500],
+  ['07-simulacion-policonsultorio-claro', '#/simulacion?t=10:40', 'claro', 1440, 900, false, '', 3000],
+  ['08-simulacion-centro-oscuro', '#/simulacion?t=11:10', 'oscuro', 1440, 900, false, "__app.cargarPreset('centro')", 3000],
+  ['09-comparacion-policonsultorio-claro', '#/simulacion?comparar=1&t=11:20', 'claro', 1440, 900, false, '', 3500],
+  ['10-comparacion-centro-oscuro', '#/simulacion?comparar=1&t=11:20', 'oscuro', 1440, 900, false, "__app.cargarPreset('centro')", 3500],
+  ['11-resultados-claro', '#/resultados', 'claro', 1440, 900, true, '', 3500],
+  ['12-resultados-oscuro', '#/resultados', 'oscuro', 1440, 900, true, '', 3500],
+  ['13-acerca-claro', '#/acerca', 'claro', 1440, 900, true, '', 1500],
+  ['14-experimentos-oscuro', '#/experimentos', 'oscuro', 1440, 900, false, '', 1200],
+  ['15-diagnostico-claro', '#/diagnostico', 'claro', 1440, 900, false, '', 9000],
+  ['16-movil-inicio-claro', '', 'claro', 390, 844, true, '', 2500],
+  ['17-movil-simulacion-oscuro', '#/simulacion?t=10:40', 'oscuro', 390, 844, true, '', 3000],
+  ['18-tablet-simulacion-claro', '#/simulacion?t=10:40', 'claro', 820, 1180, false, '', 3000],
+];
+
+for (const [archivo, ruta, tema, w, h, completa, prep, ms] of CAPTURAS) {
+  if (FILTRO && !archivo.includes(FILTRO)) continue;
+  await cdp('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: w < 500 ? 2 : 1, mobile: w < 500 });
+  await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: tema === 'oscuro' ? 'dark' : 'light' }] });
+  // Estado limpio: preset por defecto.
+  await cdp('Page.navigate', { url: BASE });
+  await espera(800);
+  await evaluar(`localStorage.clear(); 1`);
+  const sep = ruta.includes('?') ? '&' : '?';
+  const hash = ruta ? `${ruta}${sep}tema=${tema}` : `#/?tema=${tema}`;
+  await cdp('Page.navigate', { url: BASE + hash });
+  await evaluar(`(async () => { for (let i = 0; i < 100 && !window.__app; i++) await new Promise(r => setTimeout(r, 100)); await document.fonts.ready; return 1; })()`);
+  if (prep) {
+    await evaluar(`(() => { ${prep}; return 1; })()`);
+  }
+  await espera(ms);
+  let params = { format: 'png' };
+  if (completa) {
+    const alto = await evaluar('document.documentElement.scrollHeight');
+    params = { format: 'png', captureBeyondViewport: true, clip: { x: 0, y: 0, width: w, height: alto, scale: 1 } };
+  }
+  const r = await cdp('Page.captureScreenshot', params);
+  writeFileSync(join(SALIDA, `${archivo}.png`), Buffer.from(r.result.data, 'base64'));
+  console.log('ok', archivo);
+}
+ws.close();
+chrome.kill();
+process.exit(0);

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-04T00:00:00Z",
+  "title": "Design System: Sobreturnos",
+  "extensions": {
+    "colorMeta": {
+      "cian-dato": { "role": "primary", "displayName": "Cian dato", "canonical": "#06b6d4", "tonalRamp": ["#083344", "#164e63", "#155e75", "#0e7490", "#0891b2", "#06b6d4", "#67e8f9", "#cffafe"] },
+      "naranja-accion": { "role": "secondary", "displayName": "Naranja acción", "canonical": "#f97316", "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", "#ffedd5"] },
+      "verde-positivo": { "role": "tertiary", "displayName": "Verde positivo", "canonical": "#10b981", "tonalRamp": ["#022c22", "#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#6ee7b7", "#d1fae5"] },
+      "rojo-alerta": { "role": "error", "displayName": "Rojo alerta", "canonical": "#dc2626", "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#fca5a5", "#fee2e2"] },
+      "clase-tardio": { "role": "categorical", "displayName": "Clase tardío (ocre)", "canonical": "#a16207", "tonalRamp": ["#422006", "#713f12", "#854d0e", "#a16207", "#ca8a04", "#eab308", "#fde047", "#fef9c3"] },
+      "clase-espontaneo": { "role": "categorical", "displayName": "Clase espontáneo (violeta)", "canonical": "#8b5cf6", "tonalRamp": ["#2e1065", "#4c1d95", "#5b21b6", "#6d28d9", "#7c3aed", "#8b5cf6", "#c4b5fd", "#ede9fe"] },
+      "clase-urgencia": { "role": "categorical", "displayName": "Clase urgencia (rojo)", "canonical": "#ef4444", "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#fca5a5", "#fee2e2"] },
+      "zinc-texto": { "role": "neutral", "displayName": "Zinc tinta (texto y placas)", "canonical": "#18181b", "tonalRamp": ["#09090b", "#18181b", "#27272a", "#3f3f46", "#52525b", "#71717a", "#d4d4d8", "#f4f4f5"] },
+      "zinc-fondo": { "role": "neutral", "displayName": "Zinc fondo", "canonical": "#fafafa", "tonalRamp": ["#09090b", "#18181b", "#27272a", "#3f3f46", "#52525b", "#a1a1aa", "#e4e4e7", "#fafafa"] }
+    },
+    "typographyMeta": {
+      "placa": { "displayName": "Placa", "purpose": "Número de placa de escenario y cifra de B en Resultados." },
+      "display": { "displayName": "Display", "purpose": "Titular de Inicio; uno por sitio." },
+      "headline": { "displayName": "Headline", "purpose": "Títulos de página y reloj de la simulación." },
+      "headline-sm": { "displayName": "Headline chico", "purpose": "Subtítulos destacados y cifra de B del panel en vivo." },
+      "title": { "displayName": "Title", "purpose": "Subtítulos de sección y nombres en placas de preset." },
+      "title-sm": { "displayName": "Title chico", "purpose": "Títulos de figura, caption de tabla, bajadas." },
+      "body": { "displayName": "Body", "purpose": "Texto corrido, máximo 70ch." },
+      "body-sm": { "displayName": "Body chico", "purpose": "Botones, navegación, filas de indicadores, tablas." },
+      "label": { "displayName": "Label", "purpose": "Rótulos de campo, leyendas, notas, errores." },
+      "label-grupo": { "displayName": "Rótulo de grupo", "purpose": "Nombre de un grupo de indicadores en el panel en vivo, en mayúsculas; nunca antetítulo." }
+    },
+    "shadows": [
+      { "name": "flotante", "value": "0 10px 28px -12px rgb(24 24 27 / 0.28), 0 2px 6px -2px rgb(24 24 27 / 0.08)", "purpose": "Menú desplegable de navegación y tooltip de gráficos, modo claro. Nunca en paneles en reposo." },
+      { "name": "flotante-oscuro", "value": "0 12px 32px -12px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.4)", "purpose": "La misma capa flotante en modo oscuro." },
+      { "name": "foco-campo", "value": "0 0 0 3px color-mix(in srgb, #f97316 22%, transparent)", "purpose": "Halo de foco de campos de formulario, junto con el borde naranja." }
+    ],
+    "motion": [
+      { "name": "transicion", "value": "160ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Toda transición de estado: color, borde, barra activa de navegación, presión de botón." },
+      { "name": "brillo-esqueleto", "value": "1.4s ease-in-out infinite", "purpose": "Esqueleto de carga mientras el worker simula." },
+      { "name": "suavizado-plano", "value": "exponencial, tau 0.11 s de tiempo real", "purpose": "Desplazamiento de pacientes en la planta; se desactiva con prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "nav-compacta", "value": "1320px" },
+      { "name": "escena-apilada", "value": "1100px" },
+      { "name": "nav-movil", "value": "1080px" },
+      { "name": "una-columna", "value": "960px" },
+      { "name": "celular", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de una zona: relleno naranja con tinta oscura y flecha de recorrido.",
+      "html": "<button class=\"ds-boton-primario\">Ver un día del policonsultorio <svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M2 8h11M9 3.5 13.5 8 9 12.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button>",
+      "css": ".ds-boton-primario { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 16px; border-radius: 6px; border: 1px solid transparent; background: var(--accion-relleno, #f97316); color: var(--sobre-accion, #1c0a00); font-family: 'Fira Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-boton-primario:hover { background: var(--accion-hover, #ea580c); } .ds-boton-primario:active { transform: translateY(1px); } .ds-boton-primario:focus-visible { outline: 2px solid var(--accion-relleno, #f97316); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción alternativa; su estado activo (Comparar) toma el naranja suave.",
+      "html": "<button class=\"ds-boton-secundario\">Resultados del día</button> <button class=\"ds-boton-secundario ds-activo\">Comparar</button>",
+      "css": ".ds-boton-secundario { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--borde-fuerte, #d4d4d8); background: var(--panel, #ffffff); color: var(--texto, #18181b); font-family: 'Fira Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1; cursor: pointer; transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-boton-secundario:hover { border-color: var(--texto-3, #71717a); } .ds-boton-secundario:focus-visible { outline: 2px solid var(--accion-relleno, #f97316); outline-offset: 2px; } .ds-boton-secundario.ds-activo { background: var(--accion-suave, #fff7ed); border-color: var(--accion-relleno, #f97316); color: var(--accion, #c2410c); }"
+    },
+    {
+      "name": "Botón fantasma",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Acción terciaria sin borde.",
+      "html": "<button class=\"ds-boton-fantasma\">Editar escenario</button>",
+      "css": ".ds-boton-fantasma { display: inline-flex; align-items: center; min-height: 38px; padding: 0 16px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--texto-2, #52525b); font-family: 'Fira Sans', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-boton-fantasma:hover { background: var(--panel-2, #f4f4f5); color: var(--texto, #18181b); } .ds-boton-fantasma:focus-visible { outline: 2px solid var(--accion-relleno, #f97316); outline-offset: 2px; }"
+    },
+    {
+      "name": "Campo numérico con sufijo",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Campo del editor: rótulo arriba, unidad como sufijo, foco naranja.",
+      "html": "<div class=\"ds-campo\"><label for=\"ds-h\">Honorario por consulta</label><div class=\"ds-control\"><input id=\"ds-h\" type=\"text\" value=\"18.000\"><span class=\"ds-sufijo\">$</span></div></div>",
+      "css": ".ds-campo { display: flex; flex-direction: column; gap: 6px; max-width: 220px; font-family: 'Fira Sans', system-ui, sans-serif; } .ds-campo label { font-size: 0.8125rem; font-weight: 500; color: var(--texto-2, #52525b); } .ds-control { position: relative; display: flex; align-items: center; } .ds-control input { width: 100%; height: 38px; padding: 0 48px 0 12px; border: 1px solid var(--borde-fuerte, #d4d4d8); border-radius: 6px; background: var(--panel, #ffffff); color: var(--texto, #18181b); font: inherit; font-variant-numeric: tabular-nums; transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-control input:hover { border-color: var(--texto-3, #71717a); } .ds-control input:focus-visible { outline: none; border-color: var(--accion-relleno, #f97316); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accion-relleno, #f97316) 22%, transparent); } .ds-sufijo { position: absolute; right: 12px; font-size: 0.8125rem; color: var(--texto-3, #71717a); pointer-events: none; }"
+    },
+    {
+      "name": "Navegación (banda)",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Banda fija de 56px; ítem activo con barra naranja inferior; secciones próximas con placa de paso.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item\" href=\"#\">Inicio</a><a class=\"ds-nav-item ds-activo\" href=\"#\">Simulación del día</a><a class=\"ds-nav-item\" href=\"#\">Resultados del día</a><span class=\"ds-nav-div\"></span><a class=\"ds-nav-item ds-proximo\" href=\"#\"><span class=\"ds-paso\">#4</span> Experimentos</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: stretch; height: 56px; gap: 8px; padding: 0 24px; background: var(--panel, #ffffff); border-bottom: 1px solid var(--borde, #e4e4e7); font-family: 'Fira Sans', system-ui, sans-serif; } .ds-nav-item { position: relative; display: flex; align-items: center; gap: 6px; padding: 0 12px; font-size: 0.875rem; font-weight: 500; color: var(--texto-2, #52525b); text-decoration: none; transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-item:hover { color: var(--texto, #18181b); } .ds-nav-item:focus-visible { outline: 2px solid var(--accion-relleno, #f97316); outline-offset: 2px; border-radius: 4px; } .ds-nav-item::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--accion-relleno, #f97316); transform: scaleX(0); transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-item.ds-activo { color: var(--texto, #18181b); font-weight: 600; } .ds-nav-item.ds-activo::after { transform: scaleX(1); } .ds-nav-item.ds-proximo { color: var(--texto-3, #71717a); } .ds-nav-div { width: 1px; margin: 12px 0; background: var(--borde, #e4e4e7); } .ds-paso { font-size: 0.75rem; font-weight: 600; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--borde-fuerte, #d4d4d8); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Placa de escenario",
+      "kind": "card",
+      "refersTo": "placa-numero",
+      "description": "Componente firma: placa oscura con número en Fraunces monumental, nombre y acción naranja.",
+      "html": "<div class=\"ds-placa-preset\"><div class=\"ds-placa-numero\">3</div><div class=\"ds-placa-cuerpo\"><h3>Policonsultorio</h3><p>3 profesionales · Clínica médica, Pediatría</p><button class=\"ds-placa-accion\">Usar este escenario</button></div></div>",
+      "css": ".ds-placa-preset { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px; padding: 16px; max-width: 440px; background: var(--panel, #ffffff); border: 1px solid var(--borde, #e4e4e7); border-radius: 6px; font-family: 'Fira Sans', system-ui, sans-serif; transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-placa-preset:hover { border-color: var(--borde-fuerte, #d4d4d8); } .ds-placa-numero { display: grid; place-items: center; width: 72px; height: 88px; border-radius: 6px; background: var(--texto, #18181b); color: var(--panel, #ffffff); font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 4.5rem; line-height: 1; font-variation-settings: 'opsz' 144; } .ds-placa-cuerpo { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; } .ds-placa-cuerpo h3 { margin: 0; font-size: 1.375rem; font-weight: 600; color: var(--texto, #18181b); } .ds-placa-cuerpo p { margin: 0 0 12px; font-size: 0.8125rem; color: var(--texto-3, #71717a); } .ds-placa-accion { min-height: 38px; padding: 0 16px; border: 0; border-radius: 6px; background: var(--accion-relleno, #f97316); color: var(--sobre-accion, #1c0a00); font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer; } .ds-placa-accion:hover { background: var(--accion-hover, #ea580c); } .ds-placa-accion:focus-visible { outline: 2px solid var(--accion-relleno, #f97316); outline-offset: 2px; }"
+    },
+    {
+      "name": "Reloj de la simulación",
+      "kind": "custom",
+      "refersTo": "reloj",
+      "description": "Placa con la hora del modelo en Fraunces; el 'usted está aquí' temporal.",
+      "html": "<div class=\"ds-reloj\">11:20</div>",
+      "css": ".ds-reloj { display: inline-block; font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 2.25rem; line-height: 1; letter-spacing: -0.02em; padding: 6px 12px; border-radius: 6px; background: var(--texto, #18181b); color: var(--panel, #ffffff); min-width: 4.4ch; text-align: center; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Panel en vivo",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "Panel plano con grupos de indicadores rotulados y cifra de B en Fraunces.",
+      "html": "<div class=\"ds-panel-vivo\"><div><h3>Pacientes</h3><div class=\"ds-fila\"><span>Llegaron</span><b>27</b></div><div class=\"ds-fila ds-positivo\"><span>Atendidos</span><b>19</b></div></div><div class=\"ds-economia\"><h3>Acumulado del día</h3><span class=\"ds-rotulo\">Beneficio neto B</span><strong>$ 412.300</strong></div></div>",
+      "css": ".ds-panel-vivo { display: flex; flex-direction: column; gap: 16px; padding: 16px; max-width: 300px; background: var(--panel, #ffffff); border: 1px solid var(--borde, #e4e4e7); border-radius: 6px; font-family: 'Fira Sans', system-ui, sans-serif; } .ds-panel-vivo h3 { margin: 0 0 8px; font-size: 0.75rem; font-weight: 600; color: var(--texto-3, #71717a); text-transform: uppercase; letter-spacing: 0.06em; } .ds-fila { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; font-size: 0.875rem; color: var(--texto-2, #52525b); font-variant-numeric: tabular-nums; } .ds-fila b { font-weight: 600; color: var(--texto, #18181b); } .ds-fila.ds-positivo b { color: var(--positivo, #047857); } .ds-economia { border-top: 1px solid var(--borde, #e4e4e7); padding-top: 16px; display: flex; flex-direction: column; } .ds-rotulo { font-size: 0.8125rem; color: var(--texto-2, #52525b); } .ds-economia strong { font-family: 'Fraunces', Georgia, serif; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; color: var(--texto, #18181b); font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La señalética del policonsultorio",
+    "overview": "La interfaz se lee como la cartelería de un centro de salud: placas oscuras numeradas que nombran consultorios y escenarios, rótulos de zona en la planta, flechas de recorrido que indican el paso siguiente y pictogramas de forma fija para cada clase de paciente. Las superficies son paneles zinc lisos, sin relieve, con bordes de 1px y esquinas de 6px, como chapas atornilladas a una pared. La jerarquía no la dan las tarjetas apiladas sino las placas, las reglas gruesas que abren cada sección y las cifras monumentales en Fraunces.\n\nLa densidad es de instrumento: el usuario opera (reproduce un día, mueve la línea de tiempo, compara dos agendas) y los números del modelo están siempre a la vista con cifras tabulares. Fraunces aparece solo donde la señalética pondría un número grande o un título de cartel; todo lo demás es Fira Sans. El color es funcional y escaso: cian para el dato, verde para lo positivo, naranja para la acción y el \"usted está aquí\". El sistema funciona en claro y oscuro con los mismos roles, y tiene que leerse en un proyector con luz adversa.\n\nLa identidad rechaza explícitamente el dashboard de tarjetas genérico (la tesis del contrato de dirección): nada de grillas de tarjetas con métricas sueltas, sombras flotantes ni gradientes decorativos.",
+    "keyCharacteristics": [
+      "Placas oscuras (texto zinc 900 sobre fondo, o al revés en oscuro) con números en Fraunces como identificador primario de consultorios, escenarios, pasos y el reloj.",
+      "Reglas superiores de 3px en color de texto para abrir secciones; un solo nivel de contenedor debajo.",
+      "Paneles planos de 1px de borde y 6px de radio; sin sombras en reposo.",
+      "Cinco pictogramas de clase (círculo, rombo, triángulo, cuadrado, cruz): el color nunca es el único código.",
+      "Naranja reservado a la acción, al estado activo y al cursor temporal.",
+      "Cifras tabulares en todo número que cambia."
+    ],
+    "rules": [
+      { "name": "The Un Rol, Un Tono Rule", "body": "Cian es dato, verde es positivo, naranja es acción y \"usted está aquí\", rojo es alerta. Un tono nunca cambia de rol entre pantallas, y ninguno se usa como decoración.", "section": "colors" },
+      { "name": "The Texto Sobre Relleno Rule", "body": "Sobre un relleno de marca se escribe con tinta oscura (`tinta-sobre-accion`); el texto coloreado sobre panel usa la variante \"texto\" del rol, nunca el relleno puro.", "section": "colors" },
+      { "name": "The Fraunces Es Cartel Rule", "body": "Fraunces solo en números de placa, reloj, cifras clave (B, diferencias, número de figura) y títulos de página. Nunca en texto corrido, rótulos ni botones.", "section": "typography" },
+      { "name": "The Cifra Tabular Rule", "body": "Todo número que cambia (reloj, indicadores, tablas, ejes, campos numéricos) usa `font-variant-numeric: tabular-nums`, con formato es-AR.", "section": "typography" },
+      { "name": "The Mayúscula Es Rótulo Rule", "body": "Las mayúsculas espaciadas solo nombran una zona de la planta o un grupo de indicadores. Nunca van sobre un título como antetítulo.", "section": "typography" },
+      { "name": "The Regla Gruesa Rule", "body": "Una sección mayor se abre con una regla superior de 3px en color de texto (presets de Inicio, secciones del editor, resumen de Resultados) y debajo admite un solo nivel de contenedor. No se anidan paneles dentro de paneles.", "section": "layout" },
+      { "name": "The Chapa Plana Rule", "body": "Los paneles en reposo no tienen sombra. Si algo necesita destacarse, lleva un borde más fuerte, una regla gruesa o un fondo suave del rol, nunca relieve.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do numerar con placas oscuras en Fraunces todo lo que la cartelería numeraría: escenarios, consultorios, pasos y el reloj.",
+      "Do acompañar cada color de clase con su pictograma (círculo turno, rombo sobreturno, triángulo tardío, cuadrado espontáneo, cruz urgencia), tanto en el canvas como en las leyendas en SVG.",
+      "Do abrir las secciones mayores con la regla superior de 3px en color de texto y mantener un único nivel de contenedor debajo.",
+      "Do usar flechas de recorrido naranjas para indicar secuencia o el siguiente paso.",
+      "Do marcar con borde punteado y texto-3 todo lo que es supuesto o derivado (\"Datos ficticios · supuestos del modelo\").",
+      "Do usar cifras tabulares y formato es-AR en todo número que cambie.",
+      "Do definir cada color nuevo como token con su par claro/oscuro en `tokens.css`; el canvas lee los tokens, no valores sueltos."
+    ],
+    "donts": [
+      "Don't armar grillas de tarjetas de métricas al estilo dashboard genérico; las cifras viven en listas regladas, placas o el panel en vivo.",
+      "Don't poner sombras a paneles en reposo; `--sombra` es solo para menús y tooltips flotantes.",
+      "Don't usar naranja para decorar ni cian para acciones; cada tono conserva su rol.",
+      "Don't escribir texto blanco sobre relleno naranja; va `tinta-sobre-accion`.",
+      "Don't poner antetítulos en mayúsculas sobre los títulos; las mayúsculas espaciadas solo nombran zonas de la planta o grupos de indicadores.",
+      "Don't usar Fraunces en texto corrido, botones o rótulos.",
+      "Don't codificar información solo con color."
+    ]
+  }
+}

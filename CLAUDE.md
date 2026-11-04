@@ -74,14 +74,19 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - Lo que quedó fuera de meta (el abandono) es una **limitación documentada del modelo**
   (`docs/calibracion.md`, sección 9), no algo a seguir iterando.
 
-## Identidad visual para el #3 (decidida, todavía NO implementada)
+## Identidad visual (implementada en el #3; detalle en `docs/diseno-ui.md`)
 
 - Estilo **TARC Tech** adaptado a un contexto médico: base **zinc**, con **modo claro y oscuro**.
 - Colores: **cian `#06B6D4`** como color principal de datos; **verde `#10B981`** para
   indicadores positivos; **naranja `#F97316`** para acentos de marca y acciones.
 - Fuentes: **Fira Sans** (interfaz) y **Fraunces** (títulos destacados).
 - Crédito **TARC Tech** con su isotipo en el pie y en "Acerca de".
-- La autoría (nombre que figura como autor) es un **dato configurable**, no un texto fijo.
+- La autoría (nombre que figura como autor) es un **dato configurable**, no un texto fijo
+  (`src/ui/app/config.ts`; por defecto "Tomás Romero · TARC Tech").
+- Dirección: **señalética hospitalaria** (placas numeradas, pictogramas por clase de paciente,
+  "usted está aquí" en naranja). Clases: turno círculo cian, sobreturno rombo naranja, tardío
+  triángulo ocre `#A16207`, espontáneo cuadrado violeta, urgencia cruz roja (forma + color).
+- Tokens de diseño como variables CSS en `src/ui/estilos/tokens.css` (claro y oscuro).
 
 ## Arquitectura
 
@@ -91,13 +96,17 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `src/modelo/` — modelo del consultorio: esquema de escenario y presets, agenda con
   pre-muestreo por identidad, simulación de un día, métricas, traza y validación.
   Solo depende de `src/motor/` (lo controla `tests/modelo/escenario-traza.test.ts`).
-- `src/ui/` — React. `src/ui/diagnostico/` es la página provisoria (panel de un día +
-  validación del motor).
+- `src/ui/` — React, SPA con rutas por hash (`#/escenario`, `#/simulacion`, `#/resultados`, …):
+  `app/` (rutas, tema, estado global con localStorage, config), `componentes/`, `paginas/`,
+  `animacion/` (traza → animación, canvas, reloj, indicadores en vivo; TS puro salvo el dibujo),
+  `simulacion/` (Web Worker que corre el día con traza), `diagnostico/` (página del paso #1,
+  en `#/diagnostico`). La animación reproduce la traza: nunca re-simula.
 - `tests/` — Vitest. `docs/` — modelo conceptual y material para el informe.
 
 ## Comandos
 
-- `npm run dev` — página de diagnóstico en http://localhost:5173
+- `npm run dev` — aplicación en http://localhost:5173 (diagnóstico en `#/diagnostico`)
+- `npm run build` — typecheck + build de producción en `dist/` (rutas relativas, apta para GitHub Pages)
 - `npm test` — suite completa (motor, validación M/M/c y Little, modelo, validaciones a–e,
   pre-muestreo)
 - `npm run typecheck` — tsc del motor (sin DOM) y del proyecto
@@ -109,6 +118,8 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
   calibración (ver `docs/calibracion.md`)
 - `npm run barrido-control` — barrido de control k = 0–6 con B y C (#2d, presets congelados; no es el experimento del #4)
 - `npm run cobertura` — estudio de cobertura del IC 95 % con 20 semillas (~40 s)
+- `npm run capturas [-- filtro]` — capturas de `docs/capturas/` con Chrome headless (con `npm run dev` corriendo)
+- `npm run medir-fps` — fps de la animación con 3 y 6 profesionales, simple y comparación (con `npm run dev`)
 
 ## Entorno
 
