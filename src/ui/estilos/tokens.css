@@ -1,0 +1,150 @@
+/*
+ * Tokens de diseño (docs/diseno-ui.md, sección 4). Identidad TARC Tech en contexto médico:
+ * base zinc, cian = datos, verde = positivo, naranja = acción y "usted está aquí".
+ * Modo claro por defecto; oscuro por preferencia del sistema o por el selector (data-tema).
+ */
+:root {
+  --fuente-ui: 'Fira Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fuente-titulo: 'Fraunces', Georgia, serif;
+
+  /* Marca: tonos puros (rellenos, trazos) */
+  --cian: #06b6d4;
+  --verde: #10b981;
+  --naranja: #f97316;
+
+  /* Clases de paciente: iguales en los dos modos */
+  --clase-turno: #06b6d4;
+  --clase-sobreturno: #f97316;
+  --clase-tardio: #a16207;
+  --clase-espontaneo: #8b5cf6;
+  --clase-urgencia: #ef4444;
+
+  /* Escala tipográfica fija (razón ≈ 1,2) */
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-md: 0.875rem;
+  --t-base: 1rem;
+  --t-lg: 1.125rem;
+  --t-xl: 1.375rem;
+  --t-2xl: 1.75rem;
+  --t-3xl: 2.25rem;
+  --t-4xl: 3.25rem;
+  --t-placa: 4.5rem;
+
+  /* Espaciado (4 px) */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 24px;
+  --e-6: 32px;
+  --e-7: 48px;
+  --e-8: 64px;
+  --e-9: 96px;
+
+  --radio: 6px;
+  --radio-chico: 4px;
+  --ancho-max: 1440px;
+  --alto-banda: 56px;
+  --transicion: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: light;
+  --fondo: #fafafa;
+  --panel: #ffffff;
+  --panel-2: #f4f4f5;
+  --panel-3: #e4e4e7;
+  --borde: #e4e4e7;
+  --borde-fuerte: #d4d4d8;
+  --texto: #18181b;
+  --texto-2: #52525b;
+  --texto-3: #71717a;
+  --dato: #0e7490;
+  --dato-relleno: #06b6d4;
+  --dato-suave: #ecfeff;
+  --positivo: #047857;
+  --positivo-relleno: #10b981;
+  --positivo-suave: #ecfdf5;
+  --accion: #c2410c;
+  --accion-relleno: #f97316;
+  --accion-hover: #ea580c;
+  --accion-suave: #fff7ed;
+  --sobre-accion: #1c0a00;
+  --alerta: #b91c1c;
+  --alerta-relleno: #dc2626;
+  --alerta-suave: #fef2f2;
+  --sombra: 0 10px 28px -12px rgb(24 24 27 / 0.28), 0 2px 6px -2px rgb(24 24 27 / 0.08);
+  /* Planta del policonsultorio (canvas) */
+  --plano-piso: #f4f4f5;
+  --plano-sala: #ffffff;
+  --plano-muro: #a1a1aa;
+  --plano-silla: #e4e4e7;
+  --plano-texto: #3f3f46;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) {
+    color-scheme: dark;
+    --fondo: #09090b;
+    --panel: #18181b;
+    --panel-2: #1f1f23;
+    --panel-3: #27272a;
+    --borde: #27272a;
+    --borde-fuerte: #3f3f46;
+    --texto: #f4f4f5;
+    --texto-2: #a1a1aa;
+    --texto-3: #8b8b94;
+    --dato: #22d3ee;
+    --dato-relleno: #06b6d4;
+    --dato-suave: #082f36;
+    --positivo: #34d399;
+    --positivo-relleno: #10b981;
+    --positivo-suave: #052e22;
+    --accion: #fb923c;
+    --accion-relleno: #f97316;
+    --accion-hover: #fb923c;
+    --accion-suave: #2a1205;
+    --sobre-accion: #1c0a00;
+    --alerta: #f87171;
+    --alerta-relleno: #ef4444;
+    --alerta-suave: #2b0b0b;
+    --sombra: 0 12px 32px -12px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+    --plano-piso: #131316;
+    --plano-sala: #1c1c20;
+    --plano-muro: #52525b;
+    --plano-silla: #2c2c31;
+    --plano-texto: #d4d4d8;
+  }
+}
+
+:root[data-tema='oscuro'] {
+  color-scheme: dark;
+  --fondo: #09090b;
+  --panel: #18181b;
+  --panel-2: #1f1f23;
+  --panel-3: #27272a;
+  --borde: #27272a;
+  --borde-fuerte: #3f3f46;
+  --texto: #f4f4f5;
+  --texto-2: #a1a1aa;
+  --texto-3: #8b8b94;
+  --dato: #22d3ee;
+  --dato-relleno: #06b6d4;
+  --dato-suave: #082f36;
+  --positivo: #34d399;
+  --positivo-relleno: #10b981;
+  --positivo-suave: #052e22;
+  --accion: #fb923c;
+  --accion-relleno: #f97316;
+  --accion-hover: #fb923c;
+  --accion-suave: #2a1205;
+  --sobre-accion: #1c0a00;
+  --alerta: #f87171;
+  --alerta-relleno: #ef4444;
+  --alerta-suave: #2b0b0b;
+  --sombra: 0 12px 32px -12px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+  --plano-piso: #131316;
+  --plano-sala: #1c1c20;
+  --plano-muro: #52525b;
+  --plano-silla: #2c2c31;
+  --plano-texto: #d4d4d8;
+}

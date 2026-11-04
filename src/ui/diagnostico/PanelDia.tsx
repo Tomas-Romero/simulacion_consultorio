@@ -1,6 +1,6 @@
 /**
- * Panel provisorio (paso #2): simula un día con un preset y muestra sus
- * métricas y las primeras filas de la traza. Sin diseño: es para inspección.
+ * Panel del paso #2 (en #/diagnostico): simula un día con un preset y muestra sus
+ * métricas y las primeras filas de la traza, para inspección.
  * Un día tarda menos de 1 ms, así que corre en el hilo principal.
  */
 import { useMemo, useState } from 'react';
@@ -11,9 +11,9 @@ const f = (x: number, d = 1): string => (Number.isNaN(x) ? '—' : x.toLocaleStr
 const pesos = (x: number): string => `$ ${Math.round(x).toLocaleString('es-AR')}`;
 const esp = (e: ResumenEspera): string => (e.n === 0 ? '—' : `${f(e.media)} / ${f(e.p90)} (n = ${e.n})`);
 
-const celda = { border: '1px solid #bbb', padding: '3px 6px', textAlign: 'right' } as const;
-const th = { border: '1px solid #bbb', padding: '3px 6px', background: '#eee' } as const;
-const tabla = { borderCollapse: 'collapse', margin: '8px 0 16px', fontVariantNumeric: 'tabular-nums', fontSize: 13 } as const;
+const celda = { borderBottom: '1px solid var(--borde)', padding: '6px 10px', textAlign: 'right' } as const;
+const th = { borderBottom: '1px solid var(--borde-fuerte)', padding: '6px 10px', color: 'var(--texto-3)', fontWeight: 500, textAlign: 'right' } as const;
+const tabla = { borderCollapse: 'collapse', margin: '8px 0 20px', fontVariantNumeric: 'tabular-nums', fontSize: 13 } as const;
 
 function Tabla({ encabezados, filas }: { encabezados: string[]; filas: (string | number)[][] }) {
   return (
@@ -57,8 +57,8 @@ export function PanelDia() {
 
   return (
     <section>
-      <h2 style={{ fontSize: 20 }}>Modelo del consultorio · un día (provisorio)</h2>
-      <p>
+      <h2 style={{ fontSize: 20 }}>Modelo del consultorio · un día</h2>
+      <p className="diag-controles">
         <label>
           Escenario{' '}
           <select value={iPreset} onChange={(e) => setIPreset(Number(e.target.value))}>
@@ -72,7 +72,9 @@ export function PanelDia() {
         <label>
           Semilla <input type="number" value={semilla} onChange={(e) => setSemilla(Number(e.target.value))} style={{ width: 90 }} />
         </label>{' '}
-        <button onClick={() => setSemilla((s) => s + 1)}>Otro día</button>{' '}
+        <button type="button" className="boton boton-secundario boton-chico" onClick={() => setSemilla((s) => s + 1)}>
+          Otro día
+        </button>{' '}
         <span>
           · {hhmm(m.inicioDia)} a {hhmm(m.finDia)} · {res.eventos} eventos · {f(ms, 2)} ms (con traza)
         </span>
@@ -123,9 +125,9 @@ export function PanelDia() {
       {m.serie && (
         <>
           <h3 style={{ fontSize: 16 }}>Sala de espera (pacientes esperando al consultorio, cada 5 min)</h3>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 80, borderBottom: '1px solid #999', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 80, borderBottom: '1px solid var(--borde-fuerte)', overflowX: 'auto' }}>
             {m.serie.sala.map((n, i) => (
-              <div key={i} title={`${hhmm(m.serie!.t[i]!)}: ${n} en sala`} style={{ width: 4, flex: '0 0 4px', height: n * 5, background: '#5577aa' }} />
+              <div key={i} title={`${hhmm(m.serie!.t[i]!)}: ${n} en sala`} style={{ width: 4, flex: '0 0 4px', height: n * 5, background: 'var(--dato-relleno)' }} />
             ))}
           </div>
           <p style={{ fontSize: 12 }}>

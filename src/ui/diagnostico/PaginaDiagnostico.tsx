@@ -1,6 +1,6 @@
 /**
- * Página provisoria de diagnóstico (paso #1): validación del motor contra
- * M/M/c y la Ley de Little. Sin diseño; la interfaz real llega en el paso #3.
+ * Página de diagnóstico (paso #1): validación del motor contra M/M/c y la Ley de Little.
+ * Se conserva en #/diagnostico para mostrar la validación en el oral.
  */
 import { useEffect, useState } from 'react';
 import { REPLICAS_VALIDACION, SEMILLA_VALIDACION, TOLERANCIA_LITTLE, type ResultadoCaso } from '../../motor';
@@ -15,13 +15,13 @@ interface CasoCalculado {
 const f = (x: number, d = 4): string => x.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 const estilos = {
-  tabla: { borderCollapse: 'collapse', margin: '8px 0 16px', fontVariantNumeric: 'tabular-nums' },
-  celda: { border: '1px solid #bbb', padding: '4px 8px', textAlign: 'right' },
-  encabezado: { border: '1px solid #bbb', padding: '4px 8px', background: '#eee' },
+  tabla: { borderCollapse: 'collapse', margin: '8px 0 20px', fontVariantNumeric: 'tabular-nums', fontSize: 13 },
+  celda: { borderBottom: '1px solid var(--borde)', padding: '6px 10px', textAlign: 'right' },
+  encabezado: { borderBottom: '1px solid var(--borde-fuerte)', padding: '6px 10px', color: 'var(--texto-3)', fontWeight: 500, textAlign: 'right' },
 } as const;
 
 function Si({ ok }: { ok: boolean }) {
-  return <span style={{ color: ok ? '#176b2c' : '#b3261e', fontWeight: 600 }}>{ok ? 'SÍ' : 'NO'}</span>;
+  return <span style={{ color: ok ? 'var(--positivo)' : 'var(--alerta)', fontWeight: 600 }}>{ok ? 'SÍ' : 'NO'}</span>;
 }
 
 function TablaCaso({ resultado, segundos }: CasoCalculado) {
@@ -124,8 +124,9 @@ export function PaginaDiagnostico() {
   }, []);
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 16, maxWidth: 1100, margin: '0 auto', color: '#111', background: '#fff' }}>
-      <h1 style={{ fontSize: 22 }}>Sobreturnos · diagnóstico (provisorio)</h1>
+    <div className="pagina-diagnostico diagnostico">
+      <h1 className="titulo-pagina">Diagnóstico del motor</h1>
+      <p className="bajada">Validación del motor y del modelo en vivo (página de trabajo del paso #1, se conserva para el oral).</p>
       <PanelDia />
       <h2 style={{ fontSize: 20 }}>Motor · validación contra M/M/c</h2>
       <p>
@@ -139,6 +140,6 @@ export function PaginaDiagnostico() {
       {casos.map((c) => (
         <TablaCaso key={c.resultado.caso.id} {...c} />
       ))}
-    </main>
+    </div>
   );
 }
