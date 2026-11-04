@@ -12,7 +12,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "validar": "tsx scripts/validar.ts",
-    "cobertura": "tsx scripts/cobertura.ts"
+    "validar-modelo": "tsx scripts/validar-modelo.ts",
+    "cobertura": "tsx scripts/cobertura.ts",
+    "rendimiento": "tsx scripts/rendimiento.ts",
+    "dia": "tsx scripts/dia.ts"
   },
   "dependencies": {
     "echarts": "^6.1.0",

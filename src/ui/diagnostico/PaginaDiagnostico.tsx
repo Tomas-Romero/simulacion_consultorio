@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { REPLICAS_VALIDACION, SEMILLA_VALIDACION, TOLERANCIA_LITTLE, type ResultadoCaso } from '../../motor';
+import { PanelDia } from './PanelDia';
 import type { MensajeWorker } from './validacion.worker';
 
 interface CasoCalculado {
@@ -124,7 +125,9 @@ export function PaginaDiagnostico() {
 
   return (
     <main style={{ fontFamily: 'system-ui, sans-serif', padding: 16, maxWidth: 1100, margin: '0 auto', color: '#111', background: '#fff' }}>
-      <h1 style={{ fontSize: 22 }}>Sobreturnos · diagnóstico del motor (provisorio)</h1>
+      <h1 style={{ fontSize: 22 }}>Sobreturnos · diagnóstico (provisorio)</h1>
+      <PanelDia />
+      <h2 style={{ fontSize: 20 }}>Motor · validación contra M/M/c</h2>
       <p>
         Validación del motor de eventos discretos contra Erlang C. R = {REPLICAS_VALIDACION} réplicas por caso, semilla{' '}
         {SEMILLA_VALIDACION}. IC con t de Student; el IC simultáneo aplica Bonferroni sobre las 18 comparaciones (criterio de los

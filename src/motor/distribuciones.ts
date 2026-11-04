@@ -219,10 +219,16 @@ export class PoissonNoHomogeneo {
     this.tasaMaxima = Math.max(...this.tramos.map((t) => t.tasa));
   }
 
-  /** λ(t); 0 fuera de los tramos. */
+  /** λ(t); 0 fuera de los tramos. Búsqueda binaria (los tramos están ordenados y no se solapan). */
   tasaEn(t: number): number {
-    for (const tramo of this.tramos) {
-      if (t >= tramo.desde && t < tramo.hasta) return tramo.tasa;
+    let lo = 0;
+    let hi = this.tramos.length - 1;
+    while (lo <= hi) {
+      const medio = (lo + hi) >>> 1;
+      const tramo = this.tramos[medio]!;
+      if (t < tramo.desde) hi = medio - 1;
+      else if (t >= tramo.hasta) lo = medio + 1;
+      else return tramo.tasa;
     }
     return 0;
   }

@@ -59,16 +59,23 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `src/motor/` — TypeScript puro (sin React ni DOM; `tsconfig.motor.json` lo compila sin
   la lib DOM y `tests/motor/arquitectura.test.ts` lo controla): PRNG, distribuciones,
   eventos discretos, recursos/colas, estadística, teoría de colas y validación M/M/c.
-- `src/modelo/` — modelo del consultorio (paso #2). Solo depende de `src/motor/`.
-- `src/ui/` — React. `src/ui/diagnostico/` es la página provisoria del paso #1.
+- `src/modelo/` — modelo del consultorio: esquema de escenario y presets, agenda con
+  pre-muestreo por identidad, simulación de un día, métricas, traza y validación.
+  Solo depende de `src/motor/` (lo controla `tests/modelo/escenario-traza.test.ts`).
+- `src/ui/` — React. `src/ui/diagnostico/` es la página provisoria (panel de un día +
+  validación del motor).
 - `tests/` — Vitest. `docs/` — modelo conceptual y material para el informe.
 
 ## Comandos
 
 - `npm run dev` — página de diagnóstico en http://localhost:5173
-- `npm test` — suite completa (generador, distribuciones, motor, validación M/M/c, Little)
+- `npm test` — suite completa (motor, validación M/M/c y Little, modelo, validaciones a–e,
+  pre-muestreo)
 - `npm run typecheck` — tsc del motor (sin DOM) y del proyecto
 - `npm run validar` — tabla de validación M/M/c, Little y curva de Welch por consola
+- `npm run validar-modelo` — tablas de validación M/G/1 y red en serie del modelo
+- `npm run dia -- [semilla] [réplica]` — métricas completas de un día del escenario por defecto
+- `npm run rendimiento` — ms por día simulado para cada preset
 - `npm run cobertura` — estudio de cobertura del IC 95 % con 20 semillas (~40 s)
 
 ## Entorno

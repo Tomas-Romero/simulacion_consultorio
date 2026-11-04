@@ -1,8 +1,9 @@
 # Modelo conceptual — Sobreturnos en un policonsultorio
 
-> Documento base para el informe. Describe **qué** se simula (paso #2 lo implementa).
-> Todos los valores numéricos son **ficticios**, editables desde la aplicación y se
-> marcan como supuestos (S*n*). Unidad de tiempo: minutos desde las 00:00.
+> Documento base para el informe. Describe **qué** se simula y con qué reglas; la
+> implementación está en `src/modelo/` (paso #2). Todos los valores numéricos son
+> **ficticios**, editables desde la aplicación y se marcan como supuestos (S*n*).
+> Unidad de tiempo: minutos desde las 00:00.
 
 ## 1. Problema y pregunta de decisión
 
@@ -14,157 +15,253 @@ ubican mal, crecen las esperas, las horas extra y los pacientes que se van sin a
 **Variables de decisión, por profesional:**
 
 - `k`: cantidad de sobreturnos (0, 1, 2, …).
-- Política de ubicación: **al inicio**, **al final**, **intercalados** o **en los horarios de
-  mayor ausentismo** esperado.
+- Política de ubicación: `inicio`, `intercalado`, `mayor_ausentismo` o `final` (sección 5).
 
 **Objetivo:** elegir `k` y la ubicación que minimizan el costo esperado por día
 
 ```
-CT = c_espera · Σ espera de pacientes  +  c_ocio · ocio del médico
-   + c_extra · horas extra             +  c_perdido · pacientes no atendidos
+CT = c_espera · Σ espera de los pacientes atendidos  +  c_ocio · ocio de los médicos
+   + c_extra · horas extra                          +  c_perdido · pacientes perdidos
 ```
 
-y, como medida complementaria, el **resultado neto** = honorarios cobrados − CT.
+y, como medida complementaria, el **resultado neto** = honorario × atendidos − CT.
 
 ## 2. Tipo de simulación y horizonte
 
-- **Eventos discretos, terminante:** cada réplica es **un día** de 08:00 a 20:00 que arranca
-  vacío (sin pacientes ni colas) y termina cuando se atiende al último paciente presente.
-  No hay período de calentamiento: el transitorio de la mañana *es* parte de lo que se
-  quiere medir. (El calentamiento del paso #1 solo se usó para validar el motor contra
-  fórmulas de estado estacionario.)
-- **Monte Carlo:** R réplicas independientes (días) por escenario, IC 95 % con t de Student.
-  Los escenarios se comparan con **números aleatorios comunes**: la misma réplica usa los
-  mismos números en cada fuente de aleatoriedad, así las diferencias se deben a la
-  política y no al azar.
+- **Eventos discretos, terminante:** cada réplica es **un día** que arranca vacío y termina
+  cuando no queda ningún paciente ni médico en el edificio. No hay calentamiento: el
+  transitorio de la mañana es parte de lo que se mide.
+- **Monte Carlo (paso #4):** R réplicas independientes por escenario, IC 95 % con t de
+  Student. Los escenarios se comparan con **números aleatorios comunes** gracias al
+  pre-muestreo por identidad (sección 6).
 - **Línea en serie (Cap. 5):** admisión → consultorio.
-- **Dinámica de sistemas (paso #5):** visión agregada de stocks y flujos (pacientes en
-  espera, capacidad médica) sobre la misma jornada.
+- **Dinámica de sistemas (paso #5):** visión agregada de la misma jornada.
 
-## 3. Entidades y atributos
+## 3. Escenario (datos de entrada)
+
+El escenario es un objeto JSON validado con zod (`src/modelo/escenario.ts`); es lo que se
+importa y exporta. Contiene:
+
+| Bloque | Contenido |
+|---|---|
+| `jornada` | inicio (08:00), cambio de turno (14:00), fin (20:00) |
+| `profesionales` (1 a 6) | id, nombre, especialidad, turno (mañana/tarde), duración del turno de agenda `D` ∈ {15, 20, 30}, ocupación de la agenda, distribución de la demora al iniciar, sobreturnos `{k, política}` |
+| `pacientes` | proporción de primera vez, tabla de anticipación (días), anticipación de los sobreturnos, atención (familia, CV y factores por clase) |
+| `ausentismo` | β₀, β₁ de la logística |
+| `puntualidad` | distribución del desvío, tolerancia, política de tardíos, ¿se adelantan turnos? |
+| `espontaneos` | tasas por hora, mezcla por especialidad, % de urgencias, ¿abandonan?, paciencia, cierre antes del fin |
+| `admision` | recepcionistas (1–2; 0 solo en validación), distribución del tiempo de atención |
+| `costos` | c_espera, c_ocio, c_extra, c_perdido, honorario |
+
+Los tiempos aleatorios se declaran como datos (`constante`, `uniforme`, `triangular`,
+`exponencial`, `normal_truncada`, `lognormal`), así un mismo esquema sirve para el modelo
+real y para los casos de validación.
+
+**Presets** (`src/modelo/presets.ts`): *Consultorio chico* (1 clínico de mañana, 1
+recepcionista, 40 % de la demanda espontánea), *Policonsultorio* (clínica mañana y tarde +
+pediatría mañana, 1 recepcionista; es el **escenario por defecto**) y *Centro completo* (6
+profesionales, 2 recepcionistas, 150 % de la demanda espontánea).
+
+## 4. Entidades, atributos y recursos
 
 | Entidad | Atributos |
 |---|---|
-| **Paciente** | `id`; `clase` ∈ {turno primera vez, turno control, sobreturno, espontáneo, urgencia}; profesional asignado; hora del turno `h` (si tiene); días de anticipación `d`; ¿se presenta?; desvío de puntualidad `δ`; hora de llegada; tiempo de atención; paciencia (espontáneos no urgentes); prioridad en cola; marcas de tiempo (llegada, inicio/fin admisión, inicio/fin consulta, abandono). |
-| **Profesional** (1 a 6) | especialidad (clínica, pediatría, cardiología, traumatología, ginecología, dermatología); turno (mañana 08–14 o tarde 14–20); duración del turno de agenda `D` ∈ {15, 20, 30} min; demora al iniciar; estado (ausente, libre, atendiendo); hora real de llegada y de salida. |
-| **Recepcionista** (1 a 2) | estado (libre, atendiendo). Forman un único recurso "admisión" de capacidad 1–2. |
-| **Agenda** (por profesional) | lista de slots `h₀, h₀ + D, …` dentro del turno; cada slot con su paciente de turno y, si corresponde, un sobreturno superpuesto. |
+| **Paciente** | identidad (`clave`); origen (turno, sobreturno, espontáneo); clase (turno, sobreturno, tardío, espontáneo, urgencia); profesional del turno; especialidad; hora del turno; anticipación y P(no-show) predicha; ¿falta?; ¿primera vez?; desvío de puntualidad; hora de llegada; tiempo de admisión; factor de atención; paciencia; marcas de tiempo. |
+| **Profesional** | especialidad, turno, `D`, demora al iniciar, estado (ausente → libre ⇄ atendiendo → retirado), hora real de llegada y de salida, ocio, tiempo ocupado. |
+| **Admisión** | recurso del motor con 1–2 recepcionistas y una cola con prioridad (urgencias primero, el resto FIFO). |
 
-## 4. Recursos y colas
+**Colas del consultorio:**
 
-| Recurso | Capacidad | Disciplina de la cola |
+| Cola | Alcance | Orden |
 |---|---|---|
-| Admisión | 1–2 recepcionistas | Prioridad: urgencias primero; el resto FIFO. |
-| Consultorio de cada profesional | 1 (0 mientras el médico no llegó) | Prioridad: (1) urgencias; (2) pacientes con turno o sobreturno, por hora de turno; (3) espontáneos, FIFO. Los tardíos con política "al final" pasan a la clase (3). |
+| Urgencias | por especialidad (compartida) | FIFO |
+| Puntuales (turno y sobreturno) | por profesional | hora del turno |
+| Tardíos | por profesional | FIFO |
+| Espontáneos | por especialidad (compartida) | FIFO |
 
-El motor ya ofrece estas disciplinas (`Recurso` con `FIFO` o `PRIORIDAD` + `orden`), el
-abandono (`retirar`) y la capacidad variable (`cambiarCapacidad`, para la llegada tarde del
-médico y el fin de su turno).
+## 5. Agenda y sobreturnos
 
-## 5. Eventos
+- Cada profesional tiene `n = ⌊(fin − inicio) / D⌋` slots (24, 18 o 12 en un turno de 6 h).
+  Cada slot está reservado con probabilidad `ocupaciónAgenda` (S16; 1 = agenda llena).
+- Sobreturnos (`k` por profesional), según la política:
+  - **inicio:** superpuestos a los primeros `k` slots (si `k > n`, se repite desde el primero);
+  - **intercalado:** superpuestos a los slots `⌊i·n/(k+1)⌋`, i = 1..k (equiespaciados);
+  - **mayor_ausentismo:** superpuestos a los `k` slots con mayor probabilidad de quedar
+    vacíos: 1 si el slot no está reservado, si no la P(no-show) predicha por la anticipación
+    conocida del turno (sobreturno informado). Empate: el slot más temprano (S17);
+  - **final:** `k` turnos **extra** después del cierre de la agenda, a `fin, fin + D, …`.
+- Los sobreturnos también pueden faltar: tienen 1 día de anticipación (P(no-show) ≈ 8 %).
+
+## 6. Pre-muestreo de atributos (números aleatorios comunes)
+
+Al generar el día, cada paciente sortea **todos** sus atributos desde un flujo aleatorio
+propio cuyo nombre es su **identidad**, no el orden de los eventos:
+
+- `P1/t/5`: slot 5 de la agenda de P1; `P1/s/0`: primer sobreturno de P1;
+- `e/12`: espontáneo n.º 12 del día (los instantes de llegada salen de un flujo aparte);
+- `P1/demora`: demora del médico P1.
+
+De cada flujo se sacan siempre 10 uniformes en el mismo orden, se usen o no (S18):
+u0 reservado · u1 anticipación · u2 falta · u3 primera vez · u4 puntualidad · u5 admisión ·
+u6 atención · u7 paciencia · u8 urgencia · u9 especialidad.
+Consecuencia (verificada por test): con la misma semilla, pasar de `k = 0` a `k = 3` no cambia
+ningún atributo de ningún otro paciente, y el sobreturno *i* tiene los mismos atributos con
+cualquier `k ≥ i + 1` (solo cambia su hora).
+
+El tiempo de atención se pre-muestrea como un **factor de media 1** (lognormal con el CV del
+escenario): duración = factor × factor de la clase × `D` del profesional que atiende (S19).
+Así un espontáneo tiene el mismo factor lo atienda quien lo atienda.
+
+## 7. Flujo del paciente y reglas
+
+1. **Llegada.**
+   - *Con turno o sobreturno:* llega en `hora + δ`. Si `llegada > hora + tolerancia`
+     (15 min) es **tardío**: con `politicaTardios = "pierde_turno"` se pierde
+     (`tardio_rechazado`); con `"atender_si_libre"` (por defecto) entra con clase tardío. Si
+     su médico ya se retiró, también se pierde (`tardio_rechazado`).
+   - *Espontáneo:* se decide en la puerta (S20). Entra si algún profesional de su
+     especialidad está en turno y faltan más de 30 min para su fin. Si no, se pierde:
+     `fuera_de_horario` si hay uno en turno pero en los últimos 30 min, `sin_profesional`
+     si no hay ninguno en turno.
+2. **Admisión** (si hay recepcionistas): cola con urgencias primero, atención triangular 1-2-5.
+3. **Sala:** pasa a la cola que le corresponde (sección 4). Si `adelantarTurnos = false`, un
+   puntual que terminó la admisión antes de su hora recién entra a la cola a su hora (S21).
+4. **Selección del médico al quedar libre**, en este orden:
+   (a) urgencias de su especialidad; (b) sus puntuales, por hora de turno; (c) sus tardíos;
+   (d) espontáneos de su especialidad, por orden de llegada.
+   (a) y (d) solo si es **responsable** de la especialidad: está en turno, o ya terminó y no
+   hay otro profesional de la especialidad en turno (S22). Cuando llega un paciente a una cola
+   compartida, se le ofrece primero al profesional libre hace más tiempo (S23).
+5. **Abandono:** los espontáneos no urgentes abandonan cuando el tiempo desde su llegada
+   supera la paciencia (exponencial, media 45 min). En la cola de admisión o en la sala se
+   van en el acto; durante la atención en admisión no, pero si al terminarla ya agotaron la
+   paciencia y no los atiende un médico en ese instante, se van (S24). Las urgencias nunca
+   abandonan.
+6. **Consulta y salida.**
+7. **Fin del turno del médico:** sigue atendiendo a sus pacientes presentes y espera a los
+   que todavía pueden llegar puntuales (hasta `hora + tolerancia`, sin saber quién va a
+   faltar). Si es responsable, también atiende urgencias y espontáneos de su especialidad
+   ya admitidos. Se retira cuando no espera a nadie (S25). Todo lo que hace después del fin
+   de su turno son **horas extra**.
+
+## 8. Eventos
 
 | Evento | Qué cambia | Qué programa |
 |---|---|---|
-| **Inicio de jornada** (08:00) | Crea agendas, decide quién se presenta (ausentismo) y sus llegadas (puntualidad); genera las llegadas espontáneas del día (Poisson no homogéneo). | Llegadas, inicios de turno médico. |
-| **Llegada del médico** (inicio de turno + demora) | Consultorio pasa de capacidad 0 a 1; si hay cola, empieza a atender. | Fin de consulta. |
-| **Llegada de paciente** | Si es tardío (> 15 min) aplica la política: pierde el turno (perdido) o pasa al final. Entra a la cola de admisión. | Fin de admisión (si hay recepcionista libre); abandono (espontáneos no urgentes). |
-| **Fin de admisión** | Libera recepcionista; el paciente entra a la cola del consultorio con su prioridad. | Siguiente admisión; fin de consulta (si el médico está libre). |
-| **Abandono** (paciencia agotada) | El espontáneo sale de la cola sin ser atendido (perdido). Se cancela si empezó a atenderse antes. | — |
-| **Fin de consulta** | Libera al médico; registra la espera y el honorario. | Siguiente consulta. |
-| **Fin de turno del médico** (14:00 / 20:00) | Se cierran las llegadas espontáneas a ese profesional; el médico sigue hasta vaciar su cola (horas extra). | — |
-| **Fin de jornada** | Cuando no quedan pacientes, se cierran las estadísticas del día. | — |
+| Inicio del día | Genera la agenda, los sobreturnos y los espontáneos con sus atributos. | Llegadas, llegada y fin de turno de cada médico, cierre de la ventana de puntualidad de cada turno. |
+| Llegada del médico | Pasa de ausente a libre y toma la cola. | Fin de consulta. |
+| Llegada de paciente | Rechazo, tardío o ingreso; entra a la cola de admisión. | Fin de admisión, abandono. |
+| Fin de admisión | Libera al recepcionista; el paciente pasa a la sala. | Siguiente admisión, fin de consulta. |
+| Abandono | El espontáneo sale sin ser atendido. Se cancela si empezó la consulta. | — |
+| Fin de consulta | Libera al médico; el paciente sale. | Siguiente consulta o retiro. |
+| Cierre de la ventana de puntualidad (hora + 15) | Si el paciente faltó, queda como ausente; el médico revisa si puede irse. | — |
+| Fin de turno | Cambia quién es responsable de las colas compartidas. | — |
 
-## 6. Variables de estado
+## 9. Variables de estado
 
-- Reloj de simulación `t`.
-- Por profesional: estado (ausente / libre / atendiendo), largo de su cola, paciente en
-  atención.
-- Admisión: recepcionistas ocupados, largo de la cola.
-- Pacientes en el sistema (en admisión, esperando consultorio, en consulta).
-- Acumuladores: espera total, tiempo ocioso, horas extra, pacientes atendidos, perdidos
-  (por abandono, por tardanza, por cierre), honorarios.
+Reloj; estado de cada médico; colas de urgencias y espontáneos por especialidad; colas de
+puntuales y tardíos por médico; recepcionistas ocupados y cola de admisión; pacientes en
+admisión, en sala y en consulta; acumuladores de ocio, tiempo ocupado y marcas de tiempo.
 
-## 7. Medidas de desempeño
+## 10. Medidas de desempeño (por día, por profesional y totales)
 
-Por réplica (día) y, entre réplicas, con media e IC 95 %:
+- **Espera** de cada atendido = `max(0, inicio de consulta − max(llegada, hora del turno))`
+  para pacientes con turno (incluye admisión y la demora del médico; si se lo adelanta, 0) e
+  `inicio − llegada` para espontáneos y urgencias. Media y P90 (interpolación lineal) por
+  clase: turno, sobreturno, tardío, espontáneo, urgencia.
+- **Espera en admisión** (cola, aparte) y **espera en sala** (`inicio − fin de admisión`).
+- **Ocio:** minutos dentro del turno, con el médico presente y sin paciente disponible
+  (desde su llegada real hasta el fin de su turno).
+- **Horas extra:** `max(0, salida − fin del turno)`.
+- **Utilización:** médico = tiempo atendiendo / tiempo presente; admisión = tiempo de
+  atención / (recepcionistas × duración del día).
+- **Atendidos por clase, ausentes** (no-show, **no** son pérdidas) y **perdidos por motivo**:
+  `tardio_rechazado`, `abandono`, `fuera_de_horario`, `sin_profesional`.
+- **Costos** por componente (espera de los atendidos, ocio, extra, perdidos), total,
+  ingresos y neto (S26).
+- **Serie temporal** cada 5 min de pacientes en admisión, en sala y en consulta.
+- **Ley de Little del día:** `L = ∫N(t)dt / T`, `λ = n / T`, `W = Σ permanencias / n`.
 
-- **Espera** de cada paciente: `inicio de consulta − max(llegada, hora del turno)` para
-  pacientes con turno (no se cuenta la espera por llegar temprano, S12) e `inicio − llegada`
-  para espontáneos. Se informa media, percentil 90 y máximo; también la espera en admisión.
-- **Ocio del médico:** minutos dentro de su turno programado en que está presente y sin
-  paciente.
-- **Horas extra:** `max(0, fin de la última consulta − fin del turno)`.
-- **Pacientes no atendidos:** abandonos + tardíos que pierden el turno + espontáneos
-  rechazados por cierre. (Los ausentes no se cuentan: no vinieron.)
-- **Utilización** del médico y de admisión; **L** y **Lq** ponderados por tiempo.
-- **Costo total CT** y **resultado neto**.
+## 11. Datos de entrada (todos ficticios)
 
-## 8. Datos de entrada y distribuciones (todos ficticios)
-
-| Fuente | Modelo | Parámetros (supuestos) |
+| Fuente | Modelo | Parámetros |
 |---|---|---|
-| Demora del médico al iniciar | Triangular | min 0, moda 5, máx 20 min (S5) |
-| Tipo de paciente con turno | Bernoulli | 40 % primera vez, 60 % control (S6) |
-| Tiempo de atención | Lognormal (media, CV) | media 1,3·D (primera vez) u 0,8·D (control); CV 0,4 (S7) |
-| Puntualidad `δ` (llegada − hora del turno) | Normal truncada | media −5 min, desvío 8, rango [−30, +30] (S8) |
-| Anticipación del turno `d` | Discreta empírica | 1, 3, 7, 14, 21, 30 días con frecuencias 10, 15, 25, 25, 15, 10 (S9) |
-| Ausentismo | Bernoulli con p logística | `p(d) = 1 / (1 + e^−(β₀ + β₁·d))`, β₀ = −2,4973, β₁ = 0,05500 (S10) |
-| Llegadas espontáneas | Poisson no homogéneo (thinning) | perfil por hora de 08 a 20: 1,5 · 2,5 · 2 · 1,5 · 1 · 1 · 1 · 1,5 · 2 · 2 · 1,5 · 1 llegadas/h para todo el policonsultorio (Λ = 18,5/día) (S11) |
-| Urgencia | Bernoulli | 10 % de los espontáneos |
-| Paciencia (espontáneo no urgente) | Exponencial | media 45 min |
-| Atención en admisión | Triangular | min 1, moda 2, máx 5 min |
-| Honorario y costos | constantes | honorario $30 000/consulta; c_espera $150/min; c_ocio $500/min; c_extra $750/min; c_perdido $20 000/paciente (ARS, S14) |
+| Demora del médico al iniciar | Triangular | 0 – 5 – 20 min (S5) |
+| Tipo de paciente con turno | Bernoulli | 40 % primera vez (S6) |
+| Tiempo de atención | factor lognormal (media 1, CV 0,4) × factor × D | 1,3 (primera vez), 0,8 (control, espontáneo, urgencia) (S7) |
+| Puntualidad `δ` | Normal truncada | media −5, desvío 8, [−30, +30] (S8) |
+| Anticipación del turno | Discreta empírica | 1, 3, 7, 14, 21, 30 días; frecuencias 10, 15, 25, 25, 15, 10 (S9) |
+| Ausentismo | Bernoulli, p logística | β₀ = −2,4973, β₁ = 0,05500 (S10) |
+| Espontáneos | Poisson no homogéneo (thinning) | 1,5 · 2,5 · 2 · 1,5 · 1 · 1 · 1 · 1,5 · 2 · 2 · 1,5 · 1 llegadas/h de 08 a 20 (Λ = 18,5) (S11) |
+| Mezcla de espontáneos | Discreta | clínica 55, pediatría 25, traumatología 10, cardiología 5, ginecología 3, dermatología 2 (S27) |
+| Urgencias | Bernoulli | 10 % de los espontáneos |
+| Paciencia | Exponencial | media 45 min |
+| Admisión | Triangular | 1 – 2 – 5 min |
+| Costos | constantes (ARS) | honorario 30 000; c_espera 150/min; c_ocio 500/min; c_extra 750/min; c_perdido 20 000 (S14) |
 
-**Calibración del ausentismo:** se impone `p(1) = 0,08` y `p(30) = 0,30`:
-`logit(0,08) = −2,4423`, `logit(0,30) = −0,8473` ⇒ `β₁ = (−0,8473 + 2,4423)/29 = 0,05500`,
-`β₀ = −2,4423 − β₁ = −2,4973`. Valores intermedios: `p(7) = 0,108`, `p(14) = 0,151`.
-Fuera de [1, 30] días la logística extrapola (p(60) = 0,69), por eso la anticipación se
-limita a ese rango.
+**Calibración del ausentismo:** `p(1) = 0,08` y `p(30) = 0,30` ⇒ `β₁ = 0,05500`, `β₀ = −2,4973`
+(p(7) = 0,108; p(14) = 0,151). Fuera de [1, 30] días la logística extrapola (p(60) = 0,69),
+por eso la anticipación se limita a ese rango.
 
-## 9. Supuestos
+## 12. Supuestos
 
 - **S1.** Jornada 08:00–20:00; turno mañana 08–14 y tarde 14–20. Cada profesional atiende un solo turno por día.
-- **S2.** Un consultorio por profesional; los profesionales no comparten pacientes con turno.
-- **S3.** La agenda llena el turno: `360 / D` slots (24, 18 o 12) más `k` sobreturnos superpuestos a slots existentes según la política.
-- **S4.** Políticas de ubicación: *al inicio* = los primeros `k` slots; *al final* = los últimos `k`; *intercalados* = slots equiespaciados `⌊i·n/(k+1)⌋`, i = 1..k; *mayor ausentismo* = los `k` slots cuyos pacientes tienen mayor `p(d)` (mayor anticipación).
-- **S5.** El médico llega con una demora triangular(0, 5, 20) respecto del inicio de su turno y no se retira antes de terminar su cola.
+- **S2.** Un consultorio por profesional; los pacientes con turno solo los atiende su profesional.
+- **S3.** La agenda tiene `n = ⌊6 h / D⌋` slots; los sobreturnos se superponen a slots (o se agregan al final, política `final`).
+- **S4.** Las cuatro políticas de ubicación son las de la sección 5.
+- **S5.** El médico llega con una demora triangular(0, 5, 20) y no se retira antes de terminar lo que le corresponde (S25).
 - **S6.** 40 % de los turnos son de primera vez; los sobreturnos tienen la misma mezcla.
-- **S7.** El tiempo de atención depende de la duración del turno de agenda (`D`) y del tipo de consulta; espontáneos y urgencias se atienden como "control" (0,8·D).
-- **S8.** La puntualidad no depende del tipo de paciente. Tardío = llega más de 15 min después de su hora; la política es configurable: *se atiende al final* (pasa a la prioridad de los espontáneos) o *pierde el turno*.
-- **S9.** Los turnos regulares se reservan con anticipación según la tabla; los sobreturnos se dan con 1 día de anticipación (ausentismo ≈ 8 %).
+- **S7.** Espontáneos y urgencias se atienden con la media de un control (0,8·D del médico que los atiende).
+- **S8.** La puntualidad no depende del tipo de paciente.
+- **S9.** Los turnos regulares se reservan con la anticipación de la tabla; los sobreturnos, con 1 día.
 - **S10.** El ausentismo de cada paciente es independiente de los demás.
-- **S11.** Los espontáneos eligen una especialidad con probabilidad proporcional a la cantidad de profesionales de esa especialidad en turno, y dentro de ella van al de menor cola. Si no hay ninguno en turno, no ingresan al sistema. Se aceptan hasta 30 min antes del fin del turno.
-- **S12.** Un paciente con turno que llega temprano puede ser atendido antes de su hora si el médico está libre (configurable); la espera computable empieza en `max(llegada, hora del turno)`.
-- **S13.** Todos los pacientes pasan por admisión; las urgencias tienen prioridad también allí y no abandonan.
-- **S14.** Los costos y el honorario son constantes por minuto o por paciente; valores ficticios en ARS.
-- **S15.** Los días son independientes e idénticamente distribuidos (no hay estacionalidad ni arrastre de pacientes entre días).
+- **S11.** La demanda espontánea es un Poisson no homogéneo con tasa constante por hora.
+- **S12.** Si un paciente con turno es atendido antes de su hora (se adelanta), su espera es 0.
+- **S13.** Todos los pacientes que entran pasan por admisión; las urgencias tienen prioridad también allí.
+- **S14.** Costos y honorario constantes por minuto o por paciente, en ARS ficticios.
+- **S15.** Los días son independientes e idénticamente distribuidos.
+- **S16.** Cada slot está reservado con probabilidad `ocupaciónAgenda`, independiente de los demás (por defecto 1).
+- **S17.** En `mayor_ausentismo` un slot libre cuenta con P(vacío) = 1, así que se llena antes que uno reservado.
+- **S18.** Cada paciente consume siempre 10 uniformes de su flujo, en un orden fijo.
+- **S19.** El tiempo de atención es un factor de media 1 pre-muestreado por paciente, escalado por la clase y la `D` del médico que atiende.
+- **S20.** La admisión de espontáneos se decide en la puerta, antes de la admisión administrativa; los rechazados no usan recepcionista.
+- **S21.** Con `adelantarTurnos = false`, el puntual espera en la sala hasta su hora sin estar en la cola.
+- **S22.** Un profesional que terminó su turno solo toma urgencias y espontáneos de su especialidad si no queda otro de la misma especialidad en turno.
+- **S23.** Entre varios profesionales libres de la especialidad, toma al paciente de la cola compartida el que está libre hace más tiempo (empate: el de menor índice).
+- **S24.** El reloj de la paciencia corre desde la llegada; durante la atención en admisión no se puede abandonar.
+- **S25.** Después del fin de su turno, el médico espera a cada paciente propio hasta `hora + tolerancia` (no sabe quién falta) y, si es responsable, a los espontáneos de su especialidad que estén en admisión.
+- **S26.** El costo de espera se cobra sobre los atendidos; los que abandonan solo cuestan `c_perdido`.
+- **S27.** La mezcla de especialidades de los espontáneos es fija para todo el día.
+- **S28.** La admisión atiende desde la primera llegada del día (no tiene horario de apertura).
+- **S29.** Solo para validación: 0 recepcionistas = sin admisión; β₀ = −50 equivale a ausentismo nulo (p ≈ 2·10⁻²²).
 
-## 10. Flujo del paciente
+## 13. Flujo del paciente
 
 ```mermaid
 flowchart TD
-    A([Inicio de jornada 08:00]) --> B{¿Tiene turno<br/>o sobreturno?}
-    B -- Sí --> C{¿Se presenta?<br/>Bernoulli p·d}
-    C -- No --> X1([Ausente:<br/>slot libre])
-    C -- Sí --> D[Llega en h + δ<br/>δ ~ normal truncada]
-    B -- No: espontáneo<br/>Poisson no homogéneo --> E{¿Urgencia?<br/>10 %}
-    E -- Sí --> F[Prioridad máxima,<br/>no abandona]
-    E -- No --> G[Paciencia ~ Exp 45 min]
-    D --> H{¿Llega más de<br/>15 min tarde?}
-    H -- Sí, política<br/>pierde el turno --> X2([Perdido])
-    H -- Sí, política<br/>al final --> I[Pasa a prioridad<br/>de espontáneo]
+    A([Inicio del día]) --> B{¿Tiene turno<br/>o sobreturno?}
+    B -- Sí --> C{¿Falta?<br/>Bernoulli p·d}
+    C -- Sí --> X1([Ausente:<br/>no es pérdida])
+    C -- No --> D[Llega en hora + δ]
+    D --> H{¿Más de 15 min<br/>tarde?}
+    H -- Sí, pierde_turno<br/>o médico ya se fue --> X2([Perdido:<br/>tardio_rechazado])
+    H -- Sí, atender_si_libre --> I[Clase tardío]
     H -- No --> J
     I --> J
-    F --> J
+    B -- No: espontáneo --> E{¿Hay profesional de la<br/>especialidad en turno?}
+    E -- No --> X4([Perdido:<br/>sin_profesional])
+    E -- Sí, pero en los<br/>últimos 30 min --> X5([Perdido:<br/>fuera_de_horario])
+    E -- Sí --> F{¿Urgencia? 10 %}
+    F -- Sí --> J
+    F -- No --> G[Paciencia ~ Exp 45 min]
     G --> J
-    J[Cola de admisión<br/>1–2 recepcionistas] --> K[Admisión<br/>triangular 1-2-5 min]
-    K --> L[Cola del consultorio<br/>urgencia › turno por hora › espontáneo]
-    L --> M{¿Se agotó la<br/>paciencia?}
-    M -- Sí --> X3([Abandono: perdido])
-    M -- No --> N{¿Médico presente<br/>y libre?}
-    N -- No --> L
-    N -- Sí --> O[Consulta<br/>lognormal media 1,3·D u 0,8·D, CV 0,4]
-    O --> P([Sale atendido:<br/>honorario])
+    J[Cola de admisión<br/>urgencias primero] --> K[Admisión<br/>triangular 1-2-5]
+    K --> L[Sala: colas del consultorio]
+    L --> M{¿Agotó la<br/>paciencia?}
+    M -- Sí --> X3([Perdido:<br/>abandono])
+    M -- No --> N{Médico libre elige:<br/>a urgencia · b puntual por hora<br/>c tardío · d espontáneo}
+    N --> O[Consulta<br/>factor × 1,3·D u 0,8·D]
+    O --> P([Sale atendido])
 ```
 
 Ciclo del médico:
@@ -172,32 +269,39 @@ Ciclo del médico:
 ```mermaid
 stateDiagram-v2
     [*] --> Ausente
-    Ausente --> Libre: llega (inicio de turno + demora triangular 0-5-20)
-    Libre --> Atendiendo: hay paciente en cola
-    Atendiendo --> Libre: fin de consulta y cola vacía
-    Atendiendo --> Atendiendo: fin de consulta y cola no vacía
-    Libre --> [*]: fin del turno y cola vacía
-    Atendiendo --> HorasExtra: pasa el fin del turno
-    HorasExtra --> [*]: termina el último paciente
+    Ausente --> Libre: llega (inicio de turno + demora)
+    Libre --> Atendiendo: hay un paciente elegible (a–d)
+    Atendiendo --> Libre: fin de consulta
+    Libre --> Retirado: pasó el fin del turno y no espera a nadie (S25)
+    Retirado --> [*]
 ```
 
-## 11. Verificación y validación
+## 14. Verificación y validación
 
-- **Verificación (paso #1):** generador xoshiro128** contra su vector de referencia; cada
-  distribución con media y varianza muestrales dentro del IC; motor de eventos con tests de
-  orden, prioridad, abandono y capacidad variable.
-- **Validación del motor (paso #1):** el mismo motor, configurado como M/M/1 y M/M/3,
-  reproduce Erlang C (ρ, P(espera), L, Lq, W, Wq) y cumple la Ley de Little en cada réplica.
-- **Validación del modelo (paso #2 en adelante):** casos límite con solución conocida
-  (sin ausentismo ni variabilidad → agenda determinista; un solo médico con llegadas
-  Poisson → M/G/1 con Pollaczek-Khinchine), análisis de sensibilidad y, si se consiguen,
-  datos reales importados.
+**Paso #1 (motor):** generador contra su vector de referencia; distribuciones con media y
+varianza en el IC; M/M/1 y M/M/3 contra Erlang C y Ley de Little por réplica. Criterio de
+aprobación: IC simultáneo al 95 % conjunto (Bonferroni), informando también el individual.
 
-## 12. Puntos a definir en el paso #2
+**Limitación observada:** en M/M/1 con ρ = 0,9 la cobertura del IC fue 17/20 y solo 40 % de
+los desvíos fueron positivos, compatible con un leve sesgo hacia abajo por arrancar con el
+sistema vacío. Cuanto más cargado está el sistema, más largo tiene que ser el calentamiento
+(el tiempo de relajación crece como 1/(1 − √ρ)²). Esto no afecta al modelo del consultorio,
+que es terminante.
 
-1. Si "al final" para los tardíos significa después del último turno del día o
-   simplemente detrás de los turnos presentes (hoy: S8, prioridad de espontáneo).
-2. Si la espera por demora del médico se imputa igual que el resto (hoy: sí).
-3. Si los pacientes perdidos por tardanza se cuentan en `c_perdido` (hoy: sí).
-4. Si los sobreturnos se superponen a un slot (dos pacientes citados a la misma hora) o se
-   agregan como slots extra de duración cero (hoy: superpuestos, S3).
+**Paso #2 (modelo), suite `tests/modelo/`:**
+
+- (a) **Determinista:** sin ausentismo, puntualidad 0, demora 0, sin espontáneos, agenda llena
+  y atención = D ⇒ cada consulta empieza exactamente a su hora, espera 0, ocio 0, horas extra 0
+  (también con admisión constante de 3 min y llegada 5 min antes).
+- (b) **M/G/1:** un profesional, solo espontáneos Poisson, atención lognormal, sin admisión
+  ni abandono ⇒ Wq contra Pollaczek-Khinchine.
+- (c) **Red en serie:** admisión M/M/1 → consultorios M/M/3 con cola compartida; por Burke la
+  salida de la admisión es Poisson ⇒ cada espera coincide con su fórmula y la espera total con
+  la suma (red de Jackson).
+- (d) **Conservación:** generados = atendidos + perdidos + ausentes, sin pacientes ni eventos
+  pendientes ni médicos sin retirarse; Little del día exacta.
+- (e) **Casos límite:** k = 0; 100 % de ausentismo (ocio = turno completo); 1 y 6
+  profesionales; paciencia 0; sin espontáneos; política `final` con k creciente (horas extra
+  crecientes).
+- **Reglas** con días armados a mano (orden a–d, tardíos, rechazos, traspaso entre turnos,
+  espera hasta la tolerancia, adelanto de turnos) y **pre-muestreo** (k = 0 contra k = 3).

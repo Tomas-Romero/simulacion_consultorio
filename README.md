@@ -10,7 +10,7 @@ pacientes perdidos. Proyecto integrador de Simulación (UTN FRSR, 2026).
   (números aleatorios comunes para comparar escenarios).
 - Todo corre en el navegador (Web Workers), sin backend. Datos ficticios documentados.
 
-> Estado: paso 1 de 6 (base y motor validado). El modelo del consultorio y la interfaz están en
+> Estado: paso 2 de 6 (motor validado y modelo del consultorio validado). La interfaz está en
 > desarrollo.
 
 ## Uso
@@ -20,6 +20,7 @@ npm install
 npm run dev        # página de diagnóstico en http://localhost:5173
 npm test           # suite completa
 npm run validar    # tabla de validación M/M/c por consola
+npm run dia        # métricas de un día del escenario por defecto
 ```
 
 Modelo conceptual: [`docs/modelo-conceptual.md`](docs/modelo-conceptual.md).
