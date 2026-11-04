@@ -15,7 +15,9 @@
     "validar-modelo": "tsx scripts/validar-modelo.ts",
     "cobertura": "tsx scripts/cobertura.ts",
     "rendimiento": "tsx scripts/rendimiento.ts",
-    "dia": "tsx scripts/dia.ts"
+    "dia": "tsx scripts/dia.ts",
+    "calibrar": "tsx scripts/calibrar.ts",
+    "barrido-control": "tsx scripts/barrido-control.ts"
   },
   "dependencies": {
     "echarts": "^6.1.0",

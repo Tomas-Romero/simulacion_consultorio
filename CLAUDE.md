@@ -76,6 +76,9 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `npm run validar-modelo` — tablas de validación M/G/1 y red en serie del modelo
 - `npm run dia -- [semilla] [réplica]` — métricas completas de un día del escenario por defecto
 - `npm run rendimiento` — ms por día simulado para cada preset
+- `npm run calibrar -- [semilla] [días]` — situación inicial de los presets contra las metas de
+  calibración (ver `docs/calibracion.md`)
+- `npm run barrido-control` — barrido k = 0–4 del #2b (no es el experimento del #4)
 - `npm run cobertura` — estudio de cobertura del IC 95 % con 20 semillas (~40 s)
 
 ## Entorno

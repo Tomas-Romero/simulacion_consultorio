@@ -35,7 +35,6 @@ function profesional(
   especialidad: Especialidad,
   turno: Profesional['turno'],
   duracionTurno: Profesional['duracionTurno'],
-  k: number,
 ): Profesional {
   return {
     id,
@@ -45,18 +44,29 @@ function profesional(
     duracionTurno,
     ocupacionAgenda: 1,
     demoraInicio: { tipo: 'triangular', min: 0, moda: 5, max: 20 },
-    sobreturnos: { k, politica: 'intercalado' },
+    // k = 0: los sobreturnos son la variable de decisión del #4, no un dato de la situación inicial.
+    sobreturnos: { k: 0, politica: 'intercalado' },
   };
 }
 
-function base(nombre: string, descripcion: string, profesionales: Profesional[], escalaEspontaneos: number, recepcionistas: number): Escenario {
+/** Parámetros de calibración de cada preset (ver docs/calibracion.md). */
+export interface CalibracionPreset {
+  proporcionPrimeraVez: number;
+  /** Factor sobre PERFIL_ESPONTANEOS. */
+  escalaEspontaneos: number;
+  /** Horas del perfil con demanda espontánea desde las 08:00 (12 = todo el día). */
+  horasEspontaneos: number;
+  ocupacionAgenda: number;
+}
+
+function base(nombre: string, descripcion: string, profesionales: Profesional[], cal: CalibracionPreset, recepcionistas: number): Escenario {
   return EsquemaEscenario.parse({
     nombre,
     descripcion,
     jornada: { inicio: 8 * HORA, cambioTurno: 14 * HORA, fin: 20 * HORA },
-    profesionales,
+    profesionales: profesionales.map((p) => ({ ...p, ocupacionAgenda: cal.ocupacionAgenda })),
     pacientes: {
-      proporcionPrimeraVez: 0.4,
+      proporcionPrimeraVez: cal.proporcionPrimeraVez,
       anticipacion: TABLA_ANTICIPACION,
       anticipacionSobreturno: 1,
       atencion: { familia: 'lognormal', cv: 0.4, factorPrimeraVez: 1.3, factorControl: 0.8, factorEspontaneo: 0.8, factorUrgencia: 0.8 },
@@ -70,7 +80,7 @@ function base(nombre: string, descripcion: string, profesionales: Profesional[],
       adelantarTurnos: true,
     },
     espontaneos: {
-      tasasPorHora: PERFIL_ESPONTANEOS.map((t) => Math.round(t * escalaEspontaneos * 100) / 100),
+      tasasPorHora: PERFIL_ESPONTANEOS.slice(0, cal.horasEspontaneos).map((t) => Math.round(t * cal.escalaEspontaneos * 1000) / 1000),
       mezcla: MEZCLA_ESPONTANEOS,
       proporcionUrgencias: 0.1,
       abandonan: true,
@@ -82,11 +92,19 @@ function base(nombre: string, descripcion: string, profesionales: Profesional[],
   });
 }
 
+/** Valores de calibración vigentes (los anteriores están en docs/calibracion.md). */
+export const CALIBRACION_PRESETS: Record<'chico' | 'policonsultorio' | 'centro', CalibracionPreset> = {
+  // Antes de #2b: primera vez 0,4 en los tres y demanda espontánea todo el día en el consultorio chico.
+  chico: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 0.4, horasEspontaneos: 6, ocupacionAgenda: 1 },
+  policonsultorio: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1, horasEspontaneos: 12, ocupacionAgenda: 1 },
+  centro: { proporcionPrimeraVez: 0.25, escalaEspontaneos: 1.5, horasEspontaneos: 12, ocupacionAgenda: 1 },
+};
+
 export const PRESET_CONSULTORIO_CHICO = base(
   'Consultorio chico (1 médico)',
-  'Un médico clínico de mañana con turnos de 15 min y una recepcionista. Los espontáneos de otras especialidades no tienen profesional.',
-  [profesional('P1', 'Dra. Clínica (mañana)', 'clinica', 'manana', 15, 2)],
-  0.4,
+  'Un médico clínico de mañana con turnos de 15 min y una recepcionista. Abre solo de mañana: no hay demanda espontánea a la tarde.',
+  [profesional('P1', 'Dra. Clínica (mañana)', 'clinica', 'manana', 15)],
+  CALIBRACION_PRESETS.chico,
   1,
 );
 
@@ -94,11 +112,11 @@ export const PRESET_POLICONSULTORIO_3 = base(
   'Policonsultorio (3 profesionales)',
   'Clínica de mañana y de tarde y pediatría de mañana, una recepcionista.',
   [
-    profesional('P1', 'Clínica mañana', 'clinica', 'manana', 15, 2),
-    profesional('P2', 'Pediatría mañana', 'pediatria', 'manana', 20, 1),
-    profesional('P3', 'Clínica tarde', 'clinica', 'tarde', 15, 2),
+    profesional('P1', 'Clínica mañana', 'clinica', 'manana', 15),
+    profesional('P2', 'Pediatría mañana', 'pediatria', 'manana', 20),
+    profesional('P3', 'Clínica tarde', 'clinica', 'tarde', 15),
   ],
-  1,
+  CALIBRACION_PRESETS.policonsultorio,
   1,
 );
 
@@ -106,14 +124,14 @@ export const PRESET_CENTRO_6 = base(
   'Centro completo (6 profesionales)',
   'Seis profesionales en los dos turnos y dos recepcionistas; demanda espontánea un 50 % mayor.',
   [
-    profesional('P1', 'Clínica mañana', 'clinica', 'manana', 15, 2),
-    profesional('P2', 'Pediatría mañana', 'pediatria', 'manana', 20, 1),
-    profesional('P3', 'Cardiología mañana', 'cardiologia', 'manana', 30, 1),
-    profesional('P4', 'Clínica tarde', 'clinica', 'tarde', 15, 2),
-    profesional('P5', 'Traumatología tarde', 'traumatologia', 'tarde', 20, 1),
-    profesional('P6', 'Ginecología tarde', 'ginecologia', 'tarde', 20, 1),
+    profesional('P1', 'Clínica mañana', 'clinica', 'manana', 15),
+    profesional('P2', 'Pediatría mañana', 'pediatria', 'manana', 20),
+    profesional('P3', 'Cardiología mañana', 'cardiologia', 'manana', 30),
+    profesional('P4', 'Clínica tarde', 'clinica', 'tarde', 15),
+    profesional('P5', 'Traumatología tarde', 'traumatologia', 'tarde', 20),
+    profesional('P6', 'Ginecología tarde', 'ginecologia', 'tarde', 20),
   ],
-  1.5,
+  CALIBRACION_PRESETS.centro,
   2,
 );
 

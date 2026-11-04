@@ -58,9 +58,12 @@ Los tiempos aleatorios se declaran como datos (`constante`, `uniforme`, `triangu
 real y para los casos de validación.
 
 **Presets** (`src/modelo/presets.ts`): *Consultorio chico* (1 clínico de mañana, 1
-recepcionista, 40 % de la demanda espontánea), *Policonsultorio* (clínica mañana y tarde +
-pediatría mañana, 1 recepcionista; es el **escenario por defecto**) y *Centro completo* (6
-profesionales, 2 recepcionistas, 150 % de la demanda espontánea).
+recepcionista, 40 % de la demanda espontánea y solo de 08 a 14), *Policonsultorio* (clínica
+mañana y tarde + pediatría mañana, 1 recepcionista; es el **escenario por defecto**) y *Centro
+completo* (6 profesionales, 2 recepcionistas, 150 % de la demanda espontánea). Los tres parten de
+**k = 0** (situación inicial) y están calibrados para una operación plausible: utilización
+80–88 %, ausentismo 12–18 %, espera de turnos 5–15 min y menos de 20 min de horas extra por
+médico (ver [`calibracion.md`](calibracion.md); la meta de abandono < 5 % no se alcanza, S31).
 
 ## 4. Entidades, atributos y recursos
 
@@ -187,13 +190,13 @@ admisión, en sala y en consulta; acumuladores de ocio, tiempo ocupado y marcas 
 | Fuente | Modelo | Parámetros |
 |---|---|---|
 | Demora del médico al iniciar | Triangular | 0 – 5 – 20 min (S5) |
-| Tipo de paciente con turno | Bernoulli | 40 % primera vez (S6) |
+| Tipo de paciente con turno | Bernoulli | 25 % primera vez (S6; era 40 % antes de la calibración) |
 | Tiempo de atención | factor lognormal (media 1, CV 0,4) × factor × D | 1,3 (primera vez), 0,8 (control, espontáneo, urgencia) (S7) |
 | Puntualidad `δ` | Normal truncada | media −5, desvío 8, [−30, +30] (S8) |
 | Anticipación del turno | Discreta empírica | 1, 3, 7, 14, 21, 30 días; frecuencias 10, 15, 25, 25, 15, 10 (S9) |
 | Ausentismo | Bernoulli, p logística | β₀ = −2,4973, β₁ = 0,05500 (S10) |
 | Espontáneos | Poisson no homogéneo (thinning) | 1,5 · 2,5 · 2 · 1,5 · 1 · 1 · 1 · 1,5 · 2 · 2 · 1,5 · 1 llegadas/h de 08 a 20 (Λ = 18,5) (S11) |
-| Mezcla de espontáneos | Discreta | clínica 55, pediatría 25, traumatología 10, cardiología 5, ginecología 3, dermatología 2 (S27) |
+| Mezcla de espontáneos | Discreta, renormalizada sobre las especialidades presentes | clínica 55, pediatría 25, traumatología 10, cardiología 5, ginecología 3, dermatología 2 (S27) |
 | Urgencias | Bernoulli | 10 % de los espontáneos |
 | Paciencia | Exponencial | media 45 min |
 | Admisión | Triangular | 1 – 2 – 5 min |
@@ -210,7 +213,7 @@ por eso la anticipación se limita a ese rango.
 - **S3.** La agenda tiene `n = ⌊6 h / D⌋` slots; los sobreturnos se superponen a slots (o se agregan al final, política `final`).
 - **S4.** Las cuatro políticas de ubicación son las de la sección 5.
 - **S5.** El médico llega con una demora triangular(0, 5, 20) y no se retira antes de terminar lo que le corresponde (S25).
-- **S6.** 40 % de los turnos son de primera vez; los sobreturnos tienen la misma mezcla.
+- **S6.** 25 % de los turnos son de primera vez (calibrado; antes 40 %), así la atención media es 0,925·D; los sobreturnos tienen la misma mezcla.
 - **S7.** Espontáneos y urgencias se atienden con la media de un control (0,8·D del médico que los atiende).
 - **S8.** La puntualidad no depende del tipo de paciente.
 - **S9.** Los turnos regulares se reservan con la anticipación de la tabla; los sobreturnos, con 1 día.
@@ -230,10 +233,13 @@ por eso la anticipación se limita a ese rango.
 - **S23.** Entre varios profesionales libres de la especialidad, toma al paciente de la cola compartida el que está libre hace más tiempo (empate: el de menor índice).
 - **S24.** El reloj de la paciencia corre desde la llegada; durante la atención en admisión no se puede abandonar.
 - **S25.** Después del fin de su turno, el médico espera a cada paciente propio hasta `hora + tolerancia` (no sabe quién falta) y, si es responsable, a los espontáneos de su especialidad que estén en admisión.
-- **S26.** El costo de espera se cobra sobre los atendidos; los que abandonan solo cuestan `c_perdido`.
-- **S27.** La mezcla de especialidades de los espontáneos es fija para todo el día.
+- **S26.** El costo de espera se cobra solo sobre los atendidos. La espera de los que abandonan no se cobra porque esos pacientes ya pagan `c_perdido`: cobrarles también la espera contaría dos veces la misma pérdida.
+- **S27.** La mezcla de especialidades de los espontáneos es fija para todo el día y se renormaliza sobre las especialidades presentes en el escenario (un espontáneo solo pide lo que el policonsultorio ofrece). `sin_profesional` ocurre solo si la especialidad existe pero nadie de ella está en turno a esa hora. Si ninguna especialidad presente tiene peso, se reparte en partes iguales.
 - **S28.** La admisión atiende desde la primera llegada del día (no tiene horario de apertura).
 - **S29.** Solo para validación: 0 recepcionistas = sin admisión; β₀ = −50 equivale a ausentismo nulo (p ≈ 2·10⁻²²).
+- **S30.** La situación inicial de los presets no tiene sobreturnos (`k = 0`): son la variable de decisión. El consultorio chico abre solo de mañana, así que no tiene demanda espontánea de 14 a 20.
+- **S31.** Con la regla de selección (a)–(d) y la agenda llena, los espontáneos solo se atienden en los huecos de la agenda y el abandono queda en ≈ 44–51 %: la meta de calibración (< 5 %) no se alcanza con las palancas permitidas (ver `calibracion.md`, sección 5).
+- **S32.** Las urgencias tienen prioridad en las colas, pero no interrumpen una consulta en curso: esperan a que el médico de su especialidad quede libre (con la cola de la lognormal, una consulta larga puede demorarlas bastante).
 
 ## 13. Flujo del paciente
 

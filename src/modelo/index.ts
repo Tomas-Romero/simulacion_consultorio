@@ -7,3 +7,4 @@ export * from './traza';
 export * from './metricas';
 export * from './simulacion';
 export * from './validacion';
+export * from './calibracion';

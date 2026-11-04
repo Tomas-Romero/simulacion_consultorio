@@ -67,7 +67,7 @@ export interface EscenarioPreparado {
   readonly espontaneos: PoissonNoHomogeneo | null;
   readonly inicioEspontaneos: number;
   readonly finEspontaneos: number;
-  /** Mezcla de especialidades como acumulada, en el orden fijo de ESPECIALIDADES. */
+  /** Mezcla renormalizada sobre las especialidades presentes, como acumulada (orden fijo de ESPECIALIDADES). */
   readonly mezclaAcumulada: readonly { especialidad: Especialidad; acumulada: number }[];
 }
 
@@ -95,12 +95,18 @@ export function prepararEscenario(entrada: EntradaEscenario | Escenario): Escena
       )
     : null;
 
-  const pesos = ESPECIALIDADES.map((e) => espontaneos.mezcla[e] ?? 0);
-  const total = pesos.reduce((a, b) => a + b, 0);
+  // La mezcla se renormaliza sobre las especialidades presentes en el escenario: un espontáneo
+  // solo pide especialidades que el policonsultorio ofrece. Si ninguna presente tiene peso, se
+  // reparte en partes iguales entre las presentes.
+  const presentes = ESPECIALIDADES.filter((e) => escenario.profesionales.some((p) => p.especialidad === e));
+  const pesosPresentes = presentes.map((e) => espontaneos.mezcla[e] ?? 0);
+  const total = pesosPresentes.reduce((a, b) => a + b, 0);
+  const pesos = total > 0 ? pesosPresentes : presentes.map(() => 1);
+  const totalUsado = total > 0 ? total : presentes.length;
   let suma = 0;
-  const mezclaAcumulada = ESPECIALIDADES.map((especialidad, i) => {
+  const mezclaAcumulada = presentes.map((especialidad, i) => {
     suma += pesos[i]!;
-    return { especialidad, acumulada: total > 0 ? suma / total : (i + 1) / ESPECIALIDADES.length };
+    return { especialidad, acumulada: i === presentes.length - 1 ? 1 : suma / totalUsado };
   });
 
   return {
