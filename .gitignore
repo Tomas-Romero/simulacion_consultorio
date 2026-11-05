@@ -15,3 +15,6 @@ referencias/
 .impeccable/review/
 .impeccable/build/
 .impeccable/mocks/
+
+# Documentos de trabajo de Tomás en la raíz (no se publican)
+/*.docx
