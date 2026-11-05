@@ -3,17 +3,6 @@ import { enlace } from '../app/rutas';
 import { IconoFlecha } from '../componentes/Iconos';
 
 const CONTENIDO = {
-  experimentos: {
-    paso: '#4',
-    titulo: 'Experimentos Monte Carlo',
-    bajada: 'Cuántos sobreturnos dar y dónde, con intervalos de confianza.',
-    preguntas: [
-      '¿Qué k maximiza el beneficio neto B en cada preset? El barrido de control del policonsultorio deja empatados k = 2 y k = 3.',
-      '¿Qué política de ubicación conviene: al inicio, intercalados, donde más se falta o al final?',
-      '¿Cuánto cambia la recomendación si la hora extra cuesta entre 1 y 2 veces el costo de ocio?',
-    ],
-    metodo: 'Réplicas independientes en Web Workers, números aleatorios comunes entre escenarios, IC 95 % con t de Student y comparaciones pareadas.',
-  },
   dinamica: {
     paso: '#5',
     titulo: 'Dinámica de sistemas',

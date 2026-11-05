@@ -36,7 +36,7 @@ ws.addEventListener('message', (e) => {
 const cdp = (method, params = {}) => new Promise((r) => { const n = ++id; pend.set(n, r); ws.send(JSON.stringify({ id: n, method, params })); });
 const evaluar = async (expr) => (await cdp('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true })).result?.result?.value;
 
-// [archivo, ruta, tema, ancho, alto, página completa, preparación (JS), espera ms]
+// [archivo, ruta, tema, ancho, alto, página completa, preparación (JS), espera ms, selector (opcional: captura solo ese elemento)]
 const CAPTURAS = [
   ['01-inicio-claro', '', 'claro', 1440, 900, false, '', 2500],
   ['02-inicio-oscuro', '', 'oscuro', 1440, 900, false, '', 2500],
@@ -51,14 +51,23 @@ const CAPTURAS = [
   ['11-resultados-claro', '#/resultados', 'claro', 1440, 900, true, '', 3500],
   ['12-resultados-oscuro', '#/resultados', 'oscuro', 1440, 900, true, '', 3500],
   ['13-acerca-claro', '#/acerca', 'claro', 1440, 900, true, '', 1500],
-  ['14-experimentos-oscuro', '#/experimentos', 'oscuro', 1440, 900, false, '', 1200],
+  ['14-dinamica-oscuro', '#/dinamica', 'oscuro', 1440, 900, false, '', 1200],
   ['15-diagnostico-claro', '#/diagnostico', 'claro', 1440, 900, false, '', 9000],
   ['16-movil-inicio-claro', '', 'claro', 390, 844, true, '', 2500],
   ['17-movil-simulacion-oscuro', '#/simulacion?t=10:40', 'oscuro', 390, 844, true, '', 3000],
   ['18-tablet-simulacion-claro', '#/simulacion?t=10:40', 'claro', 820, 1180, false, '', 3000],
+  ['19-experimentos-claro', '#/experimentos', 'claro', 1440, 900, false, '', 3000],
+  ['20-exp-a-curva-claro', '#/experimentos', 'claro', 1440, 900, false, '', 3500, '#curva'],
+  ['21-exp-b-politicas-claro', '#/experimentos', 'claro', 1440, 900, false, '', 3500, '#politicas'],
+  ['22-exp-c-sensibilidad-claro', '#/experimentos', 'claro', 1440, 900, false, '', 3500, '#sensibilidad'],
+  ['23-exp-d-regla-claro', '#/experimentos', 'claro', 1440, 900, false, '', 3500, '#regla'],
+  ['24-exp-e-riesgo-claro', '#/experimentos', 'claro', 1440, 900, false, '', 3500, '#riesgo'],
+  ['25-exp-f-laboratorio-claro', '#/experimentos', 'claro', 1440, 900, false, "setTimeout(() => [...document.querySelectorAll('button')].find(b => b.textContent.includes('Correr el experimento')).click(), 2500)", 14000, '#laboratorio'],
+  ['26-exp-a-curva-oscuro', '#/experimentos', 'oscuro', 1440, 900, false, '', 3500, '#curva'],
+  ['27-exp-c-sensibilidad-oscuro', '#/experimentos', 'oscuro', 1440, 900, false, '', 3500, '#sensibilidad'],
 ];
 
-for (const [archivo, ruta, tema, w, h, completa, prep, ms] of CAPTURAS) {
+for (const [archivo, ruta, tema, w, h, completa, prep, ms, selector] of CAPTURAS) {
   if (FILTRO && !archivo.includes(FILTRO)) continue;
   await cdp('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: w < 500 ? 2 : 1, mobile: w < 500 });
   await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: tema === 'oscuro' ? 'dark' : 'light' }] });
@@ -78,6 +87,17 @@ for (const [archivo, ruta, tema, w, h, completa, prep, ms] of CAPTURAS) {
   if (completa) {
     const alto = await evaluar('document.documentElement.scrollHeight');
     params = { format: 'png', captureBeyondViewport: true, clip: { x: 0, y: 0, width: w, height: alto, scale: 1 } };
+  } else if (selector) {
+    // Solo la sección: su caja en coordenadas de la página (con un margen arriba y abajo).
+    // Espera a que exista la sección (la pantalla carga datos de forma asíncrona).
+    await evaluar(`(async () => { for (let i = 0; i < 100 && !document.querySelector('${selector}'); i++) await new Promise(r => setTimeout(r, 100)); return 1; })()`);
+    const texto = await evaluar(`JSON.stringify((() => { const el = document.querySelector('${selector}'); if (!el) return null; const r = el.getBoundingClientRect(); return { y: r.top + scrollY, alto: r.height }; })())`);
+    const caja = texto ? JSON.parse(texto) : null;
+    if (!caja) {
+      console.log('falta', selector, 'en', archivo, '·', String(await evaluar('document.body.innerText.slice(0, 300)')).replace(/\s+/g, ' '));
+      continue;
+    }
+    params = { format: 'png', captureBeyondViewport: true, clip: { x: 0, y: Math.max(0, caja.y - 16), width: w, height: caja.alto + 24, scale: 1 } };
   }
   const r = await cdp('Page.captureScreenshot', params);
   writeFileSync(join(SALIDA, `${archivo}.png`), Buffer.from(r.result.data, 'base64'));

@@ -2,8 +2,8 @@
  * Figura numerada con un gráfico ECharts (importado por módulos) y exportación a PNG.
  * El gráfico se rearma al cambiar el tema: los colores salen de los tokens CSS.
  */
-import { BarChart, BoxplotChart, CustomChart, LineChart, ScatterChart } from 'echarts/charts';
-import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
+import { BarChart, BoxplotChart, CustomChart, HeatmapChart, LineChart, ScatterChart } from 'echarts/charts';
+import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
 import * as echarts from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { useEffect, useRef, type ReactNode } from 'react';
@@ -11,7 +11,7 @@ import { useTema } from '../app/tema';
 import { leerPaleta, type Paleta } from '../animacion/dibujo';
 import { IconoDescargar } from './Iconos';
 
-echarts.use([BarChart, LineChart, ScatterChart, BoxplotChart, CustomChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, CanvasRenderer]);
+echarts.use([BarChart, LineChart, ScatterChart, BoxplotChart, CustomChart, HeatmapChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, VisualMapComponent, CanvasRenderer]);
 
 export type OpcionGrafico = echarts.EChartsCoreOption;
 

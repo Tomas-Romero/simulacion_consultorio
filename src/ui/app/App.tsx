@@ -12,6 +12,7 @@ import { useUbicacion, type Ruta } from './rutas';
 if (import.meta.env.DEV) (window as unknown as { __app: object }).__app = { cargarPreset, editarEscenario, setComparacion };
 
 const Resultados = lazy(() => import('../paginas/Resultados'));
+const Experimentos = lazy(() => import('../paginas/experimentos/Experimentos'));
 const Diagnostico = lazy(() => import('../diagnostico/PaginaDiagnostico').then((m) => ({ default: m.PaginaDiagnostico })));
 
 const TITULOS: Record<Ruta, string> = {
@@ -58,6 +59,8 @@ export function App() {
       pagina = <Resultados />;
       break;
     case 'experimentos':
+      pagina = <Experimentos />;
+      break;
     case 'dinamica':
     case 'datos':
       pagina = <Proximamente ruta={ruta} />;

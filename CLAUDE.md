@@ -96,6 +96,13 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `src/modelo/` — modelo del consultorio: esquema de escenario y presets, agenda con
   pre-muestreo por identidad, simulación de un día, métricas, traza y validación.
   Solo depende de `src/motor/` (lo controla `tests/modelo/escenario-traza.test.ts`).
+- `src/experimentos/` — motor de experimentos Monte Carlo (TS puro, sin React): esquema zod,
+  aplicación de niveles (k, política, ausentismo vía β₀) sobre copias del escenario, tareas por
+  bloque de réplicas, pool de Web Workers (`pool-web.ts`) o worker_threads (`pool-node.ts`),
+  análisis (pareadas, conjunto de óptimos con Bonferroni, regla de precisión, reponderación de
+  costos) y el estudio E1–E6 (`estudio.ts`). Resultado idéntico bit a bit con cualquier cantidad
+  de hilos en el mismo motor JS. Diseño en `docs/experimentos.md`; resultados precalculados en
+  `public/resultados/` (no editar a mano: se regeneran con `npm run estudio`).
 - `src/ui/` — React, SPA con rutas por hash (`#/escenario`, `#/simulacion`, `#/resultados`, …):
   `app/` (rutas, tema, estado global con localStorage, config), `componentes/`, `paginas/`,
   `animacion/` (traza → animación, canvas, reloj, indicadores en vivo; TS puro salvo el dibujo),
@@ -118,6 +125,10 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
   calibración (ver `docs/calibracion.md`)
 - `npm run barrido-control` — barrido de control k = 0–6 con B y C (#2d, presets congelados; no es el experimento del #4)
 - `npm run cobertura` — estudio de cobertura del IC 95 % con 20 semillas (~40 s)
+- `npm run estudio [-- --hilos N]` — estudio Monte Carlo completo (E1–E6, ~2 min con 8 hilos):
+  escribe `public/resultados/estudio.json` y los CSV
+- `npm run estudio-navegador` — corre el estudio en Chrome headless (Web Workers) y compara sus
+  decisiones con el JSON (con `npm run dev` corriendo)
 - `npm run capturas [-- filtro]` — capturas de `docs/capturas/` con Chrome headless (con `npm run dev` corriendo)
 - `npm run medir-fps` — fps de la animación con 3 y 6 profesionales, simple y comparación (con `npm run dev`)
 

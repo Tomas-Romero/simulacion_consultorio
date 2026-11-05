@@ -19,6 +19,12 @@
   --clase-espontaneo: #8b5cf6;
   --clase-urgencia: #ef4444;
 
+  /* Políticas de ubicación de sobreturnos (paleta categórica validada; forma: ver Experimentos) */
+  --pol-inicio: #7c3aed;
+  --pol-intercalado: #0891b2;
+  --pol-mayor-ausentismo: #b45309;
+  --pol-final: #db2777;
+
   /* Escala tipográfica fija (razón ≈ 1,2) */
   --t-xs: 0.75rem;
   --t-sm: 0.8125rem;
@@ -113,6 +119,10 @@
     --plano-muro: #52525b;
     --plano-silla: #2c2c31;
     --plano-texto: #d4d4d8;
+    --pol-inicio: #8b5cf6;
+    --pol-intercalado: #06b6d4;
+    --pol-mayor-ausentismo: #d97706;
+    --pol-final: #ec4899;
   }
 }
 
@@ -147,4 +157,8 @@
   --plano-muro: #52525b;
   --plano-silla: #2c2c31;
   --plano-texto: #d4d4d8;
+  --pol-inicio: #8b5cf6;
+  --pol-intercalado: #06b6d4;
+  --pol-mayor-ausentismo: #d97706;
+  --pol-final: #ec4899;
 }

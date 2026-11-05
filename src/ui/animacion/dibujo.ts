@@ -4,7 +4,7 @@
  * Los pacientes se deslizan hacia su posición con suavizado exponencial en tiempo real,
  * así se ven fluidos a cualquier velocidad; al saltar en la línea de tiempo se reubican.
  */
-import type { Clase } from '../../modelo';
+import type { Clase, PoliticaSobreturno } from '../../modelo';
 import { indicadoresEn, type Indicadores } from './indicadores';
 import { ALTO, ANCHO, calcularPlano, type Plano, type Punto } from './plano';
 import type { DatosAnimacion, PacienteAnim } from './preparar';
@@ -30,6 +30,7 @@ export interface Paleta {
   silla: string;
   textoPlano: string;
   clases: Record<Clase, string>;
+  politicas: Record<PoliticaSobreturno, string>;
   oscuro: boolean;
 }
 
@@ -60,6 +61,12 @@ export function leerPaleta(): Paleta {
       tardio: v('--clase-tardio'),
       espontaneo: v('--clase-espontaneo'),
       urgencia: v('--clase-urgencia'),
+    },
+    politicas: {
+      inicio: v('--pol-inicio'),
+      intercalado: v('--pol-intercalado'),
+      mayor_ausentismo: v('--pol-mayor-ausentismo'),
+      final: v('--pol-final'),
     },
     oscuro: cs.colorScheme.includes('dark'),
   };
