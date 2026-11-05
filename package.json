@@ -18,6 +18,8 @@
     "dia": "tsx scripts/dia.ts",
     "calibrar": "tsx scripts/calibrar.ts",
     "barrido-control": "tsx scripts/barrido-control.ts",
+    "estudio": "tsx scripts/estudio.ts",
+    "estudio-navegador": "node scripts/estudio-navegador.mjs",
     "capturas": "node scripts/capturas.mjs",
     "medir-fps": "node scripts/medir-fps.mjs"
   },
