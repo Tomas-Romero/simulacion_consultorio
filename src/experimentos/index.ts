@@ -6,3 +6,5 @@ export * from './corredor';
 export * from './analisis';
 export * from './estudio';
 export * from './comparar';
+export * from './regla';
+export * from './mecanismo';

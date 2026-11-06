@@ -20,6 +20,7 @@
     "barrido-control": "tsx scripts/barrido-control.ts",
     "estudio": "tsx scripts/estudio.ts",
     "estudio-navegador": "node scripts/estudio-navegador.mjs",
+    "complementos": "tsx scripts/complementos.ts",
     "capturas": "node scripts/capturas.mjs",
     "medir-fps": "node scripts/medir-fps.mjs"
   },
