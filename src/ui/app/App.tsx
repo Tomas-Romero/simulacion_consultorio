@@ -13,6 +13,7 @@ if (import.meta.env.DEV) (window as unknown as { __app: object }).__app = { carg
 
 const Resultados = lazy(() => import('../paginas/Resultados'));
 const Experimentos = lazy(() => import('../paginas/experimentos/Experimentos'));
+const Dinamica = lazy(() => import('../paginas/dinamica/Dinamica'));
 const Diagnostico = lazy(() => import('../diagnostico/PaginaDiagnostico').then((m) => ({ default: m.PaginaDiagnostico })));
 
 const TITULOS: Record<Ruta, string> = {
@@ -62,6 +63,8 @@ export function App() {
       pagina = <Experimentos />;
       break;
     case 'dinamica':
+      pagina = <Dinamica />;
+      break;
     case 'datos':
       pagina = <Proximamente ruta={ruta} />;
       break;

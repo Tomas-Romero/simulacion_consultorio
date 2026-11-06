@@ -42,7 +42,7 @@ export function ejeRecesivo(p: Paleta): Record<string, unknown> {
 }
 
 interface Props {
-  numero: number;
+  numero: number | string;
   titulo: string;
   descripcion?: ReactNode;
   opcion: (p: Paleta) => OpcionGrafico;

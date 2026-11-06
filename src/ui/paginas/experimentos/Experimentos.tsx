@@ -25,6 +25,7 @@ import {
   opcionRegla,
   opcionRiesgo,
 } from './graficos';
+import { MecanismoPoliticas, ReglaCorregida } from './Complementos';
 import { Laboratorio } from './Laboratorio';
 
 const SECCIONES = [
@@ -176,6 +177,7 @@ export default function Experimentos() {
                 nota={`R común por escenario: ${estudio.e2.map((x) => `${NOMBRE_PRESET[x.preset]} ${entero(x.Rcomun)}`).join(' · ')} días. Nivel individual ${porcentaje(estudio.e2[0]!.nivelBonferroni)}.`}
               />
             </div>
+            <MecanismoPoliticas />
           </Seccion>
 
           <Seccion id="sensibilidad" letra="c" titulo="Sensibilidad" bajada={`Policonsultorio con la política ganadora (${NOMBRES_POLITICA[estudio.e3.politica].toLowerCase()}). El ausentismo se cambia desplazando β₀ con β₁ fijo: faltan los mismos pacientes y algunos más (números aleatorios comunes). Los costos se reponderan sobre los mismos días.`}>
@@ -271,6 +273,7 @@ export default function Experimentos() {
               csv={{ nombre: 'e4-regla.csv', contenido: csv['e4-regla.csv']! }}
               nota="“En el conjunto”: el k de la regla está dentro del conjunto de óptimos indistinguibles."
             />
+            <ReglaCorregida />
           </Seccion>
 
           <Seccion id="riesgo" letra="e" titulo="Riesgo día a día" bajada={`Policonsultorio, ${NOMBRES_POLITICA[estudio.e5.politica].toLowerCase()}: cuánto cambia el beneficio de un día dado respecto de no dar sobreturnos (R = ${entero(estudio.e5.R)} días pareados).`}>

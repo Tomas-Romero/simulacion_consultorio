@@ -30,6 +30,53 @@ export function useEstudio(): { estudio: EstudioPublicado | null; error: string 
   return estado;
 }
 
+/** Análisis complementarios del #5 (public/resultados/complementos.json). */
+export interface ComplementosPublicados {
+  generado: string;
+  semilla: number;
+  regla: {
+    excedentes: Record<string, { lambda: number[]; cupos: number[]; exceso: number[]; media: number }>;
+    N: Record<string, number>;
+    coincidenConE4: number;
+    loo: import('../../experimentos/regla').ResultadoLOO;
+  };
+  mecanismo: { preset: string; configs: { politica: import('../../modelo').PoliticaSobreturno; k: number; perfil: import('../../experimentos/mecanismo').PerfilResumido }[] }[];
+  fluido: {
+    k: number;
+    R: number;
+    t: number[];
+    des: import('../../experimentos/analisis').IC[];
+    fluido: number[];
+    desArea: import('../../experimentos/analisis').IC;
+    desEspera: import('../../experimentos/analisis').IC;
+    desMaximo: import('../../experimentos/analisis').IC;
+    fluidoArea: number;
+    fluidoEspera: number;
+    fluidoMaximo: number;
+  }[];
+}
+
+let promesaComplementos: Promise<ComplementosPublicados> | null = null;
+
+export function useComplementos(): ComplementosPublicados | null {
+  const [c, setC] = useState<ComplementosPublicados | null>(null);
+  useEffect(() => {
+    let vigente = true;
+    promesaComplementos ??= fetch('./resultados/complementos.json').then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json() as Promise<ComplementosPublicados>;
+    });
+    promesaComplementos.then(
+      (x) => vigente && setC(x),
+      () => (promesaComplementos = null),
+    );
+    return () => {
+      vigente = false;
+    };
+  }, []);
+  return c;
+}
+
 export function descargarTexto(nombre: string, contenido: string, tipo = 'text/csv;charset=utf-8'): void {
   const url = URL.createObjectURL(new Blob([contenido], { type: tipo }));
   const a = document.createElement('a');

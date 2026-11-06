@@ -3,17 +3,6 @@ import { enlace } from '../app/rutas';
 import { IconoFlecha } from '../componentes/Iconos';
 
 const CONTENIDO = {
-  dinamica: {
-    paso: '#5',
-    titulo: 'Dinámica de sistemas',
-    bajada: 'La misma jornada vista como stocks y flujos.',
-    preguntas: [
-      '¿Cómo se acumula la sala de espera cuando la llegada de pacientes supera la capacidad de atención?',
-      '¿Qué bucles de realimentación explican el abandono y las horas extra?',
-      '¿Qué tanto se parece la vista agregada a la simulación de eventos discretos?',
-    ],
-    metodo: 'Diagrama causal, modelo de stocks y flujos integrado numéricamente y comparación con el promedio de la simulación.',
-  },
   datos: {
     paso: '#6',
     titulo: 'Datos, reportes e informe',

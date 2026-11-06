@@ -103,6 +103,13 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
   costos) y el estudio E1–E6 (`estudio.ts`). Resultado idéntico bit a bit con cualquier cantidad
   de hilos en el mismo motor JS. Diseño en `docs/experimentos.md`; resultados precalculados en
   `public/resultados/` (no editar a mano: se regeneran con `npm run estudio`).
+  Análisis complementarios del #5: regla corregida por espontáneos con validación dejando uno
+  afuera (`regla.ts`) y perfiles por franja de 30 min del mecanismo de las políticas
+  (`mecanismo.ts`); resultados en `public/resultados/complementos.json` (`npm run complementos`).
+- `src/dinamica/` — dinámica de sistemas (TS puro, sin React): modelo fluido de un día
+  (`fluido.ts`), lista de espera en semanas con políticas k = 0 / fijo / adaptativo, equilibrio
+  analítico, Euler y RK4 (`lista.ts`), parámetros base y tabla de beneficio desde E3
+  (`parametros.ts`), comparación y convergencia (`resumen.ts`). Diseño en `docs/dinamica-sistemas.md`.
 - `src/ui/` — React, SPA con rutas por hash (`#/escenario`, `#/simulacion`, `#/resultados`, …):
   `app/` (rutas, tema, estado global con localStorage, config), `componentes/`, `paginas/`,
   `animacion/` (traza → animación, canvas, reloj, indicadores en vivo; TS puro salvo el dibujo),
@@ -129,6 +136,9 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
   escribe `public/resultados/estudio.json` y los CSV
 - `npm run estudio-navegador` — corre el estudio en Chrome headless (Web Workers) y compara sus
   decisiones con el JSON (con `npm run dev` corriendo)
+- `npm run complementos` — análisis complementarios del #5 (regla dejando uno afuera, mecanismo
+  R = 500, modelo fluido contra eventos discretos; ~100 s): escribe `public/resultados/complementos.json`
+  y `regla-loo.csv`, `mecanismo.csv`, `fluido.csv`
 - `npm run capturas [-- filtro]` — capturas de `docs/capturas/` con Chrome headless (con `npm run dev` corriendo)
 - `npm run medir-fps` — fps de la animación con 3 y 6 profesionales, simple y comparación (con `npm run dev`)
 

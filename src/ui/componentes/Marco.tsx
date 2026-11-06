@@ -20,9 +20,9 @@ const PRINCIPALES: ItemNav[] = [
   { ruta: 'simulacion', texto: 'Simulación del día' },
   { ruta: 'resultados', texto: 'Resultados del día' },
   { ruta: 'experimentos', texto: 'Experimentos' },
+  { ruta: 'dinamica', texto: 'Dinámica de sistemas' },
 ];
 const PROXIMOS: ItemNav[] = [
-  { ruta: 'dinamica', texto: 'Dinámica de sistemas', paso: '#5' },
   { ruta: 'datos', texto: 'Datos', paso: '#6' },
 ];
 

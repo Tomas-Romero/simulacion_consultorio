@@ -51,7 +51,7 @@ const CAPTURAS = [
   ['11-resultados-claro', '#/resultados', 'claro', 1440, 900, true, '', 3500],
   ['12-resultados-oscuro', '#/resultados', 'oscuro', 1440, 900, true, '', 3500],
   ['13-acerca-claro', '#/acerca', 'claro', 1440, 900, true, '', 1500],
-  ['14-dinamica-oscuro', '#/dinamica', 'oscuro', 1440, 900, false, '', 1200],
+  ['14-datos-oscuro', '#/datos', 'oscuro', 1440, 900, false, '', 1200],
   ['15-diagnostico-claro', '#/diagnostico', 'claro', 1440, 900, false, '', 9000],
   ['16-movil-inicio-claro', '', 'claro', 390, 844, true, '', 2500],
   ['17-movil-simulacion-oscuro', '#/simulacion?t=10:40', 'oscuro', 390, 844, true, '', 3000],
@@ -65,6 +65,12 @@ const CAPTURAS = [
   ['25-exp-f-laboratorio-claro', '#/experimentos', 'claro', 1440, 900, false, "setTimeout(() => [...document.querySelectorAll('button')].find(b => b.textContent.includes('Correr el experimento')).click(), 2500)", 14000, '#laboratorio'],
   ['26-exp-a-curva-oscuro', '#/experimentos', 'oscuro', 1440, 900, false, '', 3500, '#curva'],
   ['27-exp-c-sensibilidad-oscuro', '#/experimentos', 'oscuro', 1440, 900, false, '', 3500, '#sensibilidad'],
+  ['28-ds-estructura-claro', '#/dinamica', 'claro', 1440, 900, false, '', 3000, '#estructura'],
+  ['29-ds-politicas-claro', '#/dinamica', 'claro', 1440, 900, false, '', 3500, '#politicas-ds'],
+  ['30-ds-fluido-claro', '#/dinamica', 'claro', 1440, 900, false, '', 3500, '#fluido'],
+  ['31-ds-numerico-claro', '#/dinamica', 'claro', 1440, 900, false, '', 3500, '#numerico'],
+  ['32-ds-estructura-oscuro', '#/dinamica', 'oscuro', 1440, 900, false, '', 3000, '#estructura'],
+  ['33-ds-politicas-oscuro', '#/dinamica', 'oscuro', 1440, 900, false, '', 3500, '#politicas-ds'],
 ];
 
 for (const [archivo, ruta, tema, w, h, completa, prep, ms, selector] of CAPTURAS) {

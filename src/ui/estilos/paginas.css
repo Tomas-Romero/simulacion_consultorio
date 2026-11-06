@@ -1450,3 +1450,158 @@ kbd {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ============================================================ Dinámica de sistemas */
+.controles-dinamica {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3) var(--e-4);
+  align-items: flex-end;
+  padding: var(--e-4);
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+.controles-dinamica .campo {
+  min-width: 120px;
+  width: 150px;
+}
+.figura-diagrama {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+.diagrama {
+  width: 100%;
+  height: auto;
+  font-family: var(--fuente-ui);
+}
+.dg-nodo rect {
+  fill: var(--texto);
+}
+.dg-nodo text {
+  fill: var(--panel);
+  font-size: 13px;
+  font-weight: 600;
+}
+.dg-stock rect {
+  fill: var(--panel);
+  stroke: var(--texto);
+  stroke-width: 2.5;
+}
+.dg-stock text {
+  fill: var(--texto);
+}
+.dg-politica rect {
+  fill: var(--accion-relleno);
+}
+.dg-politica text {
+  fill: var(--sobre-accion);
+}
+.dg-arco path {
+  fill: none;
+  stroke: var(--texto-2);
+  stroke-width: 1.75;
+}
+.dg-punta {
+  fill: var(--texto-2);
+}
+.dg-signo-mas,
+.dg-signo-menos {
+  fill: var(--panel);
+  stroke-width: 1.5;
+}
+.dg-signo-mas {
+  stroke: var(--dato);
+}
+.dg-signo-menos {
+  stroke: var(--alerta);
+}
+.dg-signo {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--texto);
+}
+.dg-bucle path {
+  fill: none;
+  stroke-width: 2;
+}
+.dg-bucle text {
+  font-size: 12px;
+  font-weight: 700;
+}
+.dg-bucle-R path {
+  stroke: var(--accion-relleno);
+}
+.dg-bucle-R text {
+  fill: var(--accion);
+}
+.dg-bucle-B path {
+  stroke: var(--dato-relleno);
+}
+.dg-bucle-B text {
+  fill: var(--dato);
+}
+.dg-tubo {
+  fill: none;
+  stroke: var(--texto-3);
+  stroke-width: 6;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+.dg-valvula path {
+  fill: var(--panel);
+  stroke: var(--texto);
+  stroke-width: 1.5;
+}
+.dg-stock-f rect {
+  fill: var(--panel-2);
+  stroke: var(--texto);
+  stroke-width: 2;
+}
+.dg-stock-texto {
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--texto);
+}
+.dg-sub {
+  font-size: 11px;
+  fill: var(--texto-2);
+}
+.dg-nube {
+  fill: var(--panel-2);
+  stroke: var(--texto-3);
+  stroke-width: 1.5;
+}
+.dg-aux circle {
+  fill: var(--panel);
+  stroke: var(--dato);
+  stroke-width: 1.75;
+}
+.dg-aux text {
+  font-size: 13px;
+  font-weight: 600;
+  font-style: italic;
+  fill: var(--texto);
+}
+.dg-info {
+  fill: none;
+  stroke: var(--dato);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+}
+.sub-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  margin-top: var(--e-4);
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--borde-fuerte);
+}
+.conclusion {
+  max-width: 90ch;
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--radio);
+  background: var(--panel-2);
+  color: var(--texto-2);
+}

@@ -299,3 +299,24 @@ export function opcionPrecision(e6: ResultadoEstudio['e6']) {
     };
   };
 }
+
+/** Perfil por franja de 30 min de dos políticas (mecanismo, #5 Parte 0.2). */
+export function opcionPerfil(lineas: { politica: PoliticaSobreturno; k: number; valores: number[] }[], t: number[], etiqueta: string, formato: (v: number) => string) {
+  return (p: Paleta): OpcionGrafico => ({
+    ...base(p),
+    legend: { top: 0, left: 0, textStyle: { color: p.texto2, fontSize: 11 }, data: lineas.map((l) => ({ name: `${NOMBRES_POLITICA[l.politica]} (k = ${l.k})`, icon: SIMBOLO_POLITICA[l.politica] })) },
+    grid: { left: 48, right: 12, top: 36, bottom: 30 },
+    tooltip: { ...(base(p).tooltip as object), trigger: 'axis', valueFormatter: (v: number) => formato(v) },
+    xAxis: { type: 'category', data: t.map((x) => `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}`), ...eje(p), splitLine: { show: false }, axisLabel: { ...(eje(p).axisLabel as object), interval: 3 } },
+    yAxis: { type: 'value', name: etiqueta, ...eje(p) },
+    series: lineas.map((l) => ({
+      name: `${NOMBRES_POLITICA[l.politica]} (k = ${l.k})`,
+      type: 'line',
+      data: l.valores,
+      symbol: SIMBOLO_POLITICA[l.politica],
+      symbolSize: 6,
+      lineStyle: { color: p.politicas[l.politica], width: 2 },
+      itemStyle: { color: p.politicas[l.politica] },
+    })),
+  });
+}

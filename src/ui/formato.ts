@@ -5,7 +5,8 @@ const f2 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFra
 const fp = new Intl.NumberFormat('es-AR', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export const entero = (x: number): string => f0.format(Math.round(x));
-export const decimal = (x: number, d: 1 | 2 = 1): string => (Number.isFinite(x) ? (d === 1 ? f1 : f2).format(x) : '—');
+const f3 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+export const decimal = (x: number, d: 1 | 2 | 3 = 1): string => (Number.isFinite(x) ? (d === 1 ? f1 : d === 2 ? f2 : f3).format(x) : '—');
 export const porcentaje = (x: number): string => (Number.isFinite(x) ? fp.format(x) : '—');
 export const pesos = (x: number): string => (x < 0 ? '−$ ' : '$ ') + f0.format(Math.abs(Math.round(x)));
 export const pesosCompacto = (x: number): string => {

@@ -29,8 +29,11 @@ export function PlanoCanvas({ datos, reproductor, modo = 'auto', etiqueta, class
     const d = new DibujantePlano(canvas, datos, modo === 'auto' ? 'completo' : modo, leerPaleta());
     dibujante.current = d;
     if (import.meta.env.DEV) (canvas as unknown as { __dibujante: DibujantePlano }).__dibujante = d;
+    const elemento = caja.current!;
     const ajustar = (): void => {
-      const w = caja.current!.clientWidth;
+      // El ResizeObserver puede avisar una última vez después de desmontar: se usa el elemento capturado.
+      const w = elemento.clientWidth;
+      if (w === 0) return;
       const h = Math.round((w * ALTO) / ANCHO);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
@@ -40,7 +43,7 @@ export function PlanoCanvas({ datos, reproductor, modo = 'auto', etiqueta, class
     };
     ajustar();
     const ro = new ResizeObserver(ajustar);
-    ro.observe(caja.current!);
+    ro.observe(elemento);
     const quitar = reproductor.alCuadro((t, dt, salto) => d.dibujar(t, dt, salto));
     document.fonts?.ready.then(() => {
       d.setPaleta(leerPaleta());
