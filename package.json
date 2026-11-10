@@ -23,7 +23,8 @@
     "complementos": "tsx scripts/complementos.ts",
     "capturas": "node scripts/capturas.mjs",
     "medir-fps": "node scripts/medir-fps.mjs",
-    "dinamica": "tsx scripts/dinamica.ts"
+    "dinamica": "tsx scripts/dinamica.ts",
+    "informe": "tsx scripts/informe/datos.ts && python scripts/informe/generar_informe.py"
   },
   "dependencies": {
     "echarts": "^6.1.0",

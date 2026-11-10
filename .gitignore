@@ -18,3 +18,7 @@ referencias/
 
 # Documentos de trabajo de Tomás en la raíz (no se publican)
 /*.docx
+
+# Informe final y guion de la defensa (se generan con npm run informe; no se publican)
+/informe/
+__pycache__/
