@@ -3,3 +3,4 @@ export * from './fluido';
 export * from './lista';
 export * from './parametros';
 export * from './resumen';
+export * from './sensibilidad';

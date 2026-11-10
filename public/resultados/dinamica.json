@@ -1,0 +1,904 @@
+{
+ "generado": "npm run dinamica",
+ "kFijo": 2,
+ "parametros": {
+  "profesionales": 3,
+  "turnosPorProfesional": 19.333333333333332,
+  "diasHabiles": 5,
+  "demandaBase": 48.71756425116508,
+  "pico": {
+   "inicio": 10,
+   "duracion": 6,
+   "aumento": 0.3
+  },
+  "reingreso": 0.5,
+  "desaliento": {
+   "umbral": 7,
+   "ancho": 14,
+   "maximo": 0.6
+  },
+  "tiempoMinimo": 1,
+  "beta0": -2.4973,
+  "beta1": 0.055,
+  "anticipacion": [
+   {
+    "valor": 1,
+    "frecuencia": 10
+   },
+   {
+    "valor": 3,
+    "frecuencia": 15
+   },
+   {
+    "valor": 7,
+    "frecuencia": 25
+   },
+   {
+    "valor": 14,
+    "frecuencia": 25
+   },
+   {
+    "valor": 21,
+    "frecuencia": 15
+   },
+   {
+    "valor": 30,
+    "frecuencia": 10
+   }
+  ],
+  "horizonteSemanas": 36
+ },
+ "capacidad0": 41.42857142857143,
+ "demandaRelativa": 1.1759412060626053,
+ "equilibrios": [
+  {
+   "k": 0,
+   "C": 41.42857142857143,
+   "eqs": [
+    {
+     "a": 11.949999999999996,
+     "L": 495.07142857142844,
+     "p": 0.147052642447066,
+     "d": 0.21214285714285694,
+     "saturado": true,
+     "estable": true,
+     "pendiente": -1.915528140017386
+    }
+   ]
+  },
+  {
+   "k": 1,
+   "C": 43.57142857142857,
+   "eqs": [
+    {
+     "a": 10.911274245915774,
+     "L": 475.41980642918725,
+     "p": 0.13863197741405353,
+     "d": 0.16762603911067603,
+     "saturado": true,
+     "estable": true,
+     "pendiente": -1.9159906788246415
+    }
+   ]
+  },
+  {
+   "k": 2,
+   "C": 45.714285714285715,
+   "eqs": [
+    {
+     "a": 9.868512217730682,
+     "L": 451.13198709625976,
+     "p": 0.13063205452255253,
+     "d": 0.12293623790274352,
+     "saturado": true,
+     "estable": true,
+     "pendiente": -1.9175522083969552
+    }
+   ]
+  },
+  {
+   "k": 3,
+   "C": 47.857142857142854,
+   "eqs": [
+    {
+     "a": 8.82252191614791,
+     "L": 422.2206917013642,
+     "p": 0.12306685854669913,
+     "d": 0.07810808212062469,
+     "saturado": true,
+     "estable": true,
+     "pendiente": -1.9200815575715067
+    }
+   ]
+  }
+ ],
+ "politicas": [
+  {
+   "nombre": "Sin sobreturnos (k = 0)",
+   "politica": {
+    "tipo": "fija",
+    "k": 0
+   },
+   "Lmax": 668.9586927039536,
+   "amax": 16.147278789405775,
+   "pmax": 0.18536266935763515,
+   "atendidos": 8826.24457276296,
+   "perdidos": 4064.151943449535,
+   "beneficio": 269819143.2213112,
+   "picoAtendidos": 2894.2420822802455,
+   "picoPerdidos": 1786.612066767765,
+   "picoBeneficio": 89111527.82626209,
+   "kSemanal": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "nombre": "k fijo = 2 (recomendado del estudio)",
+   "politica": {
+    "tipo": "fija",
+    "k": 2
+   },
+   "Lmax": 660.2722378100763,
+   "amax": 14.443455202095418,
+   "pmax": 0.1690338077348813,
+   "atendidos": 9918.725368190044,
+   "perdidos": 3015.2859041897573,
+   "beneficio": 278615270.7730155,
+   "picoAtendidos": 3255.9012976351664,
+   "picoPerdidos": 1416.2158295834438,
+   "picoBeneficio": 92491644.14862089,
+   "kSemanal": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+   ]
+  },
+  {
+   "nombre": "k adaptativo (tabla de E3)",
+   "politica": {
+    "tipo": "adaptativa"
+   },
+   "Lmax": 655.3113478401096,
+   "amax": 13.69307293994259,
+   "pmax": 0.16216636657959163,
+   "atendidos": 9994.637231013467,
+   "perdidos": 2939.436095700231,
+   "beneficio": 278763178.270544,
+   "picoAtendidos": 3331.1387183612965,
+   "picoPerdidos": 1344.7492301373716,
+   "picoBeneficio": 92635263.52439035,
+   "kSemanal": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+   ]
+  }
+ ],
+ "convergencia": {
+  "referencia": {
+   "Lmax": 660.6193810988156,
+   "Lfinal": 451.7286569841579,
+   "beneficio": 278615273.0065426
+  },
+  "filas": [
+   {
+    "metodo": "euler",
+    "dt": 1,
+    "Lmax": 662.0818839539722,
+    "Lfinal": 451.6616194710828,
+    "beneficio": 278611766.13871723,
+    "errorLmax": 1.4625028551566857,
+    "errorLfinal": 0.06703751307509265,
+    "errorBeneficio": 3506.8678253889084
+   },
+   {
+    "metodo": "euler",
+    "dt": 0.25,
+    "Lmax": 660.9943687376531,
+    "Lfinal": 451.71155683779466,
+    "beneficio": 278614414.4119804,
+    "errorLmax": 0.3749876388375242,
+    "errorLfinal": 0.01710014636324786,
+    "errorBeneficio": 858.5945622324944
+   },
+   {
+    "metodo": "euler",
+    "dt": 0.1,
+    "Lmax": 660.7779335603558,
+    "Lfinal": 451.72181237731223,
+    "beneficio": 278614931.3016498,
+    "errorLmax": 0.15855246154023916,
+    "errorLfinal": 0.006844606845675116,
+    "errorBeneficio": 341.7048928141594
+   },
+   {
+    "metodo": "rk4",
+    "dt": 1,
+    "Lmax": 659.563219378491,
+    "Lfinal": 451.7245336398717,
+    "beneficio": 278615263.15265715,
+    "errorLmax": 1.0561617203245532,
+    "errorLfinal": 0.004123344286199426,
+    "errorBeneficio": 9.853885471820831
+   },
+   {
+    "metodo": "rk4",
+    "dt": 0.25,
+    "Lmax": 660.2722378100763,
+    "Lfinal": 451.72765704990815,
+    "beneficio": 278615270.7730155,
+    "errorLmax": 0.34714328873928935,
+    "errorLfinal": 0.000999934249762191,
+    "errorBeneficio": 2.23352712392807
+   },
+   {
+    "metodo": "rk4",
+    "dt": 0.1,
+    "Lmax": 660.4891956335433,
+    "Lfinal": 451.7282819850051,
+    "beneficio": 278615272.195216,
+    "errorLmax": 0.13018546527223407,
+    "errorLfinal": 0.00037499915282523943,
+    "errorBeneficio": 0.8113266229629517
+   }
+  ]
+ },
+ "sensibilidad": [
+  {
+   "parametro": "reingreso",
+   "valor": 0.25,
+   "esBase": false,
+   "demandaRelativa": 1.2226034226142581,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269881899.2388988,
+     "perdidos": 4572.1100876792925,
+     "atendidos": 8829.919742272914,
+     "Lmax": 665.0641794235627
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278596136.8537083,
+     "perdidos": 3525.460555778216,
+     "atendidos": 9915.871661306011,
+     "Lmax": 659.5207543762702
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278739108.3294174,
+     "perdidos": 3450.1500622920344,
+     "atendidos": 9991.217740068365,
+     "Lmax": 655.3726006035156
+    }
+   ],
+   "difBeneficio": 142971.4757090807,
+   "difPerdidos": -75.31049348618171,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "reingreso",
+   "valor": 0.5,
+   "esBase": true,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269819143.2213112,
+     "perdidos": 4064.1519434495353,
+     "atendidos": 8826.24457276296,
+     "Lmax": 668.9586927039536
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278615270.7730155,
+     "perdidos": 3015.2859041897577,
+     "atendidos": 9918.725368190044,
+     "Lmax": 660.2722378100763
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278763178.270544,
+     "perdidos": 2939.436095700231,
+     "atendidos": 9994.637231013467,
+     "Lmax": 655.3113478401096
+    }
+   ],
+   "difBeneficio": 147907.4975284934,
+   "difPerdidos": -75.84980848952682,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "reingreso",
+   "valor": 0.75,
+   "esBase": false,
+   "demandaRelativa": 1.1292789895109525,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 2,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269743876.8731681,
+     "perdidos": 3556.8228221920654,
+     "atendidos": 8821.839138259418,
+     "Lmax": 673.1275287070009
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278637285.25936997,
+     "perdidos": 2505.3967753912507,
+     "atendidos": 9921.962795005917,
+     "Lmax": 660.6436902630239
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278790317.92835826,
+     "perdidos": 2428.9157742060374,
+     "atendidos": 9998.552299828112,
+     "Lmax": 654.7949201435491
+    }
+   ],
+   "difBeneficio": 153032.66898828745,
+   "difPerdidos": -76.48100118521324,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "desalientoMaximo",
+   "valor": 0.3,
+   "esBase": false,
+   "demandaRelativa": 1.0364068320312054,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 2,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 267475535.94964457,
+     "perdidos": 2643.238621435892,
+     "atendidos": 8692.700128951174,
+     "Lmax": 798.5203480898493
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 279079828.1410021,
+     "perdidos": 1522.1016213656999,
+     "atendidos": 9992.144747713448,
+     "Lmax": 681.0587905796706
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 279313226.18965185,
+     "perdidos": 1451.1480852978407,
+     "atendidos": 10067.157310180011,
+     "Lmax": 664.6958576693228
+    }
+   ],
+   "difBeneficio": 233398.0486497283,
+   "difPerdidos": -70.9535360678592,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "desalientoMaximo",
+   "valor": 0.6,
+   "esBase": true,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269819143.2213112,
+     "perdidos": 4064.1519434495353,
+     "atendidos": 8826.24457276296,
+     "Lmax": 668.9586927039536
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278615270.7730155,
+     "perdidos": 3015.2859041897577,
+     "atendidos": 9918.725368190044,
+     "Lmax": 660.2722378100763
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278763178.270544,
+     "perdidos": 2939.436095700231,
+     "atendidos": 9994.637231013467,
+     "Lmax": 655.3113478401096
+    }
+   ],
+   "difBeneficio": 147907.4975284934,
+   "difPerdidos": -75.84980848952682,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "desalientoMaximo",
+   "valor": 0.9,
+   "esBase": false,
+   "demandaRelativa": 1.3588927713850745,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 270464084.9647415,
+     "perdidos": 6032.6069260065215,
+     "atendidos": 8863.574721730187,
+     "Lmax": 599.3591633661758
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278432728.92409545,
+     "perdidos": 5012.69248123525,
+     "atendidos": 9885.124619791346,
+     "Lmax": 620.5353323574071
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278517397.7686528,
+     "perdidos": 4942.893883628296,
+     "atendidos": 9954.923017386096,
+     "Lmax": 627.7984905411498
+    }
+   ],
+   "difBeneficio": 84668.84455734491,
+   "difPerdidos": -69.79859760695399,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "umbral",
+   "valor": 7,
+   "esBase": true,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269819143.2213112,
+     "perdidos": 4064.1519434495353,
+     "atendidos": 8826.24457276296,
+     "Lmax": 668.9586927039536
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278615270.7730155,
+     "perdidos": 3015.2859041897577,
+     "atendidos": 9918.725368190044,
+     "Lmax": 660.2722378100763
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278763178.270544,
+     "perdidos": 2939.436095700231,
+     "atendidos": 9994.637231013467,
+     "Lmax": 655.3113478401096
+    }
+   ],
+   "difBeneficio": 147907.4975284934,
+   "difPerdidos": -75.84980848952682,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "umbral",
+   "valor": 14,
+   "esBase": false,
+   "demandaRelativa": 0.9264736787764669,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": false,
+   "equilibrios": 3,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 266948492.68204325,
+     "perdidos": 1396.5844539940565,
+     "atendidos": 8662.497806751691,
+     "Lmax": 783.9296734346759
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 272765990.408364,
+     "perdidos": 572.244182251153,
+     "atendidos": 10038.859652491277,
+     "Lmax": 495.07142857142856
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278523969.5616084,
+     "perdidos": 597.1154343816622,
+     "atendidos": 10013.98470534043,
+     "Lmax": 495.07142857142856
+    }
+   ],
+   "difBeneficio": 5757979.153244376,
+   "difPerdidos": 24.87125213050922,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 1
+  },
+  {
+   "parametro": "umbral",
+   "valor": 21,
+   "esBase": false,
+   "demandaRelativa": 0.9264736787764669,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": false,
+   "equilibrios": 3,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 257967686.6416282,
+     "perdidos": 1546.0806781886154,
+     "atendidos": 8180.555638793942,
+     "Lmax": 990.6788943871849
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 272765990.408364,
+     "perdidos": 572.244182251153,
+     "atendidos": 10038.859652491277,
+     "Lmax": 495.07142857142856
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278523969.5616084,
+     "perdidos": 597.1154343816622,
+     "atendidos": 10013.98470534043,
+     "Lmax": 495.07142857142856
+    }
+   ],
+   "difBeneficio": 5757979.153244376,
+   "difPerdidos": 24.87125213050922,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 1
+  },
+  {
+   "parametro": "aumento",
+   "valor": 0.15,
+   "esBase": false,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 270467849.2829578,
+     "perdidos": 3720.2338333629823,
+     "atendidos": 8863.364113780115,
+     "Lmax": 591.0009553720108
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278974503.9277601,
+     "perdidos": 2666.246336279153,
+     "atendidos": 9961.114359353865,
+     "Lmax": 566.0358700822322
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278974503.9277601,
+     "perdidos": 2666.246336279153,
+     "atendidos": 9961.114359353865,
+     "Lmax": 566.0358700822322
+    }
+   ],
+   "difBeneficio": 0,
+   "difPerdidos": 0,
+   "ganaBeneficio": -1,
+   "ganaPerdidos": -1
+  },
+  {
+   "parametro": "aumento",
+   "valor": 0.3,
+   "esBase": true,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269819143.2213112,
+     "perdidos": 4064.1519434495353,
+     "atendidos": 8826.24457276296,
+     "Lmax": 668.9586927039536
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278615270.7730155,
+     "perdidos": 3015.2859041897577,
+     "atendidos": 9918.725368190044,
+     "Lmax": 660.2722378100763
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278763178.270544,
+     "perdidos": 2939.436095700231,
+     "atendidos": 9994.637231013467,
+     "Lmax": 655.3113478401096
+    }
+   ],
+   "difBeneficio": 147907.4975284934,
+   "difPerdidos": -75.84980848952682,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "aumento",
+   "valor": 0.5,
+   "esBase": false,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269062590.09672254,
+     "perdidos": 4516.257102532709,
+     "atendidos": 8783.23675862129,
+     "Lmax": 751.4550420770868
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278134760.9121541,
+     "perdidos": 3474.58297337739,
+     "atendidos": 9868.363537218102,
+     "Lmax": 761.2202532565568
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278469005.406095,
+     "perdidos": 3370.4614872445336,
+     "atendidos": 9972.556141333554,
+     "Lmax": 763.1157521071221
+    }
+   ],
+   "difBeneficio": 334244.49394094944,
+   "difPerdidos": -104.12148613285626,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "duracion",
+   "valor": 3,
+   "esBase": false,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 270475522.78588724,
+     "perdidos": 3719.658984076998,
+     "atendidos": 8864.007772367544,
+     "Lmax": 631.0353955426051
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278962587.45399845,
+     "perdidos": 2665.887199242721,
+     "atendidos": 9961.611207959939,
+     "Lmax": 610.7327766090874
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278982872.3000172,
+     "perdidos": 2650.352935971864,
+     "atendidos": 9977.154115161735,
+     "Lmax": 610.7327766090874
+    }
+   ],
+   "difBeneficio": 20284.846018731594,
+   "difPerdidos": -15.534263270857082,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "duracion",
+   "valor": 6,
+   "esBase": true,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 269819143.2213112,
+     "perdidos": 4064.1519434495353,
+     "atendidos": 8826.24457276296,
+     "Lmax": 668.9586927039536
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278615270.7730155,
+     "perdidos": 3015.2859041897577,
+     "atendidos": 9918.725368190044,
+     "Lmax": 660.2722378100763
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278763178.270544,
+     "perdidos": 2939.436095700231,
+     "atendidos": 9994.637231013467,
+     "Lmax": 655.3113478401096
+    }
+   ],
+   "difBeneficio": 147907.4975284934,
+   "difPerdidos": -75.84980848952682,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  },
+  {
+   "parametro": "duracion",
+   "valor": 10,
+   "esBase": false,
+   "demandaRelativa": 1.1759412060626053,
+   "a0": 11.95,
+   "p0": 0.14705264244706606,
+   "estable": true,
+   "equilibrios": 1,
+   "politicas": [
+    {
+     "nombre": "Sin sobreturnos (k = 0)",
+     "beneficio": 268967134.35934395,
+     "perdidos": 4521.519509425454,
+     "atendidos": 8777.317384535947,
+     "Lmax": 681.204217089785
+    },
+    {
+     "nombre": "k fijo = 2 (recomendado del estudio)",
+     "beneficio": 278144226.08245474,
+     "perdidos": 3478.605131189035,
+     "atendidos": 9863.133577644758,
+     "Lmax": 678.405076100824
+    },
+    {
+     "nombre": "k adaptativo (tabla de E3)",
+     "beneficio": 278464961.33425456,
+     "perdidos": 3343.452765064306,
+     "atendidos": 9998.49038942517,
+     "Lmax": 672.6387828388866
+    }
+   ],
+   "difBeneficio": 320735.25179982185,
+   "difPerdidos": -135.15236612472927,
+   "ganaBeneficio": 2,
+   "ganaPerdidos": 2
+  }
+ ]
+}

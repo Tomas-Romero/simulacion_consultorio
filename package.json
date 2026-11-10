@@ -22,7 +22,8 @@
     "estudio-navegador": "node scripts/estudio-navegador.mjs",
     "complementos": "tsx scripts/complementos.ts",
     "capturas": "node scripts/capturas.mjs",
-    "medir-fps": "node scripts/medir-fps.mjs"
+    "medir-fps": "node scripts/medir-fps.mjs",
+    "dinamica": "tsx scripts/dinamica.ts"
   },
   "dependencies": {
     "echarts": "^6.1.0",

@@ -142,6 +142,44 @@ function paso(prm: ParametrosLista, tb: TablaBeneficio, t: number, y: Float64Arr
   return y.map((v, i) => v + (dt / 6) * (k1[i]! + 2 * k2[i]! + 2 * k3[i]! + k4[i]!));
 }
 
+/** g(a) = dL/dt con demanda constante D en función de la anticipación (el equilibrio es g(a*) = 0). */
+export function balance(prm: ParametrosLista, k: number, D: number, a: number): number {
+  const C = capacidad(prm, k);
+  return D * (1 - desaliento(prm, a)) - Math.min(C, (a * C) / prm.tiempoMinimo) * (1 - prm.reingreso * ausentismo(prm, a));
+}
+
+/**
+ * Todos los equilibrios con demanda constante D en a ∈ (0, hasta], con su estabilidad: estable si
+ * g'(a*) < 0 (una lista un poco más larga se achica). Con un tramo sin desaliento, R1 puede crear
+ * equilibrios inestables y dejar al sistema biestable.
+ */
+export function equilibrios(prm: ParametrosLista, k: number, D = prm.demandaBase, hasta = 365): { a: number; L: number; p: number; d: number; saturado: boolean; estable: boolean; pendiente: number }[] {
+  const C = capacidad(prm, k);
+  const g = (a: number): number => balance(prm, k, D, a);
+  const out: { a: number; L: number; p: number; d: number; saturado: boolean; estable: boolean; pendiente: number }[] = [];
+  const h = 0.01;
+  let a0 = 1e-9;
+  let g0 = g(a0);
+  for (let a1 = h; a1 <= hasta + 1e-9; a1 += h) {
+    const g1 = g(a1);
+    if (g0 === 0 || g0 * g1 < 0) {
+      let lo = a0, hi = a1;
+      for (let i = 0; i < 100; i++) {
+        const m = (lo + hi) / 2;
+        if (g(lo) * g(m) <= 0) hi = m;
+        else lo = m;
+      }
+      const a = (lo + hi) / 2;
+      const e = 1e-5;
+      const pendiente = (g(a + e) - g(a - e)) / (2 * e);
+      out.push({ a, L: a * C, p: ausentismo(prm, a), d: desaliento(prm, a), saturado: a >= prm.tiempoMinimo, estable: pendiente < 0, pendiente });
+    }
+    a0 = a1;
+    g0 = g1;
+  }
+  return out;
+}
+
 /** Equilibrio con demanda constante D: raíz de D·(1−d(a)) = min(C, a·C/τ)·(1 − r·p(a)), L* = a*·C. */
 export function equilibrio(prm: ParametrosLista, k: number, D = prm.demandaBase): { a: number; L: number; p: number; S: number; saturado: boolean } {
   const C = capacidad(prm, k);

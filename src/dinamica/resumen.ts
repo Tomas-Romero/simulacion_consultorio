@@ -24,7 +24,7 @@ function ventana(desde: number, hasta: number, serie: number[]): number {
   return serie[b]! - serie[a]!;
 }
 
-export function compararPoliticas(prm: ParametrosLista, tb: TablaBeneficio, kFijo: number, opciones: { dt?: number; metodo?: Metodo } = {}): ResumenPolitica[] {
+export function compararPoliticas(prm: ParametrosLista, tb: TablaBeneficio, kFijo: number, opciones: { dt?: number; metodo?: Metodo; L0?: number } = {}): ResumenPolitica[] {
   const politicas: { nombre: string; politica: Politica }[] = [
     { nombre: 'Sin sobreturnos (k = 0)', politica: { tipo: 'fija', k: 0 } },
     { nombre: `k fijo = ${kFijo} (recomendado del estudio)`, politica: { tipo: 'fija', k: kFijo } },
