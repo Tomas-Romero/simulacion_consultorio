@@ -109,12 +109,18 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `src/dinamica/` — dinámica de sistemas (TS puro, sin React): modelo fluido de un día
   (`fluido.ts`), lista de espera en semanas con políticas k = 0 / fijo / adaptativo, equilibrio
   analítico, Euler y RK4 (`lista.ts`), parámetros base y tabla de beneficio desde E3
-  (`parametros.ts`), comparación y convergencia (`resumen.ts`). Diseño en `docs/dinamica-sistemas.md`.
+  (`parametros.ts`), comparación y convergencia (`resumen.ts`), sensibilidad de a un supuesto
+  (`sensibilidad.ts`). D₀ calibrado al consultorio del estudio (anticipación 11,95 días, #6).
+  Diseño en `docs/dinamica-sistemas.md`; resultados en `public/resultados/dinamica.json` (`npm run dinamica`).
+- `src/datos/` — datos reales (#6, TS puro): funciones especiales, ajuste por máxima verosimilitud
+  (lognormal, gamma, exponencial, empírica), KS y χ², regresión logística (Newton), lectura de CSV
+  con zod, datos de ejemplo generados con el modelo y aplicación al escenario.
 - `src/ui/` — React, SPA con rutas por hash (`#/escenario`, `#/simulacion`, `#/resultados`, …):
   `app/` (rutas, tema, estado global con localStorage, config), `componentes/`, `paginas/`,
   `animacion/` (traza → animación, canvas, reloj, indicadores en vivo; TS puro salvo el dibujo),
   `simulacion/` (Web Worker que corre el día con traza), `diagnostico/` (página del paso #1,
-  en `#/diagnostico`). La animación reproduce la traza: nunca re-simula.
+  en `#/diagnostico`). La animación reproduce la traza: nunca re-simula. `#/datos` (import/export,
+  ajustes) y `#/reporte` (vista imprimible; estilos `@media print` en `paginas.css`).
 - `tests/` — Vitest. `docs/` — modelo conceptual y material para el informe.
 
 ## Comandos
@@ -139,8 +145,15 @@ Respetar las restricciones del mensaje (no adelantar pasos posteriores del plan)
 - `npm run complementos` — análisis complementarios del #5 (regla dejando uno afuera, mecanismo
   R = 500, modelo fluido contra eventos discretos; ~100 s): escribe `public/resultados/complementos.json`
   y `regla-loo.csv`, `mecanismo.csv`, `fluido.csv`
+- `npm run dinamica` — resultados de la lista de espera (D₀ calibrado, políticas, convergencia,
+  sensibilidad): escribe `public/resultados/dinamica.json` y `dinamica-*.csv`
 - `npm run capturas [-- filtro]` — capturas de `docs/capturas/` con Chrome headless (con `npm run dev` corriendo)
 - `npm run medir-fps` — fps de la animación con 3 y 6 profesionales, simple y comparación (con `npm run dev`)
+
+## Publicación
+
+- GitHub Pages con GitHub Actions (`.github/workflows/pages.yml`): en cada push a `main` corre
+  `npm test` y `npm run build` y publica `dist/` en https://tomas-romero.github.io/simulacion_consultorio/.
 
 ## Entorno
 
