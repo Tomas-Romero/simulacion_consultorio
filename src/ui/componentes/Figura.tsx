@@ -88,7 +88,7 @@ export function Figura({ numero, titulo, descripcion, opcion, alto = 320, archiv
           <h2 className="figura-titulo">
             <span className="figura-numero">Fig. {numero}</span> {titulo}
           </h2>
-          {descripcion && <p className="figura-descripcion">{descripcion}</p>}
+          {descripcion && (typeof descripcion === 'string' ? <p className="figura-descripcion">{descripcion}</p> : <div className="figura-descripcion">{descripcion}</div>)}
         </div>
         <button type="button" className="boton boton-fantasma boton-chico" onClick={exportar} aria-label={`Exportar la figura ${numero} como PNG`}>
           <IconoDescargar tam={16} /> PNG

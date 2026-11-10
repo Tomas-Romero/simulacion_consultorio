@@ -11,7 +11,7 @@ import type { Paleta } from '../animacion/dibujo';
 import { prepararAnimacion, type DatosAnimacion } from '../animacion/preparar';
 import { base, ejeRecesivo, Figura, type OpcionGrafico } from '../componentes/Figura';
 import { IconoFlecha } from '../componentes/Iconos';
-import { NOMBRES_CLASE, Pictograma } from '../componentes/Pictograma';
+import { NOMBRES_CLASE, Pictograma, PlacasClases } from '../componentes/Pictograma';
 import { decimal, entero, hora, pesos, porcentaje } from '../formato';
 import { useCorrida } from '../simulacion/cliente';
 
@@ -226,7 +226,7 @@ function LeyendaGantt() {
     <ul className="leyenda-figura">
       {CLASES.map((c) => (
         <li key={c}>
-          <Pictograma clase={c} tam={14} /> {NOMBRES_CLASE[c]}
+          <Pictograma clase={c} tam={14} placa /> {NOMBRES_CLASE[c]}
         </li>
       ))}
       <li>
@@ -438,7 +438,12 @@ export default function Resultados() {
         <Figura
           numero={3}
           titulo="Espera por clase de paciente"
-          descripcion="Caja: cuartiles; puntos: cada paciente atendido."
+          descripcion={
+            <>
+              Caja: cuartiles; puntos: cada paciente atendido.
+              <PlacasClases clases={CLASES.filter((c) => m.espera[c].n > 0)} tam={13} className="leyenda-figura leyenda-encabezado" />
+            </>
+          }
           opcion={op.espera}
           archivo={`fig3-espera-${slug}`}
           resumen={`Distribución de la espera por clase; espera media de los turnos ${decimal(m.espera.turno.media)} minutos.`}

@@ -4,7 +4,7 @@
  */
 import { useSyncExternalStore } from 'react';
 
-export const RUTAS = ['inicio', 'escenario', 'simulacion', 'resultados', 'experimentos', 'dinamica', 'datos', 'acerca', 'diagnostico'] as const;
+export const RUTAS = ['inicio', 'escenario', 'simulacion', 'resultados', 'experimentos', 'dinamica', 'datos', 'reporte', 'acerca', 'diagnostico'] as const;
 export type Ruta = (typeof RUTAS)[number];
 
 export interface Ubicacion {

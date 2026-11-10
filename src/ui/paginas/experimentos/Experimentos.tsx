@@ -291,9 +291,12 @@ export default function Experimentos() {
         </>
       )}
 
-      <Seccion id="laboratorio" letra="f" titulo="Laboratorio" bajada="Un experimento a medida sobre el escenario del editor, en vivo. Con los mismos gráficos y el mismo criterio de selección.">
-        <Laboratorio estudio={estudio} />
-      </Seccion>
+      {/* Se muestra cuando el estudio terminó de cargar (o falló): así no aparece arriba y después se corre (CLS). */}
+      {(estudio || error) && (
+        <Seccion id="laboratorio" letra="f" titulo="Laboratorio" bajada="Un experimento a medida sobre el escenario del editor, en vivo. Con los mismos gráficos y el mismo criterio de selección.">
+          <Laboratorio estudio={estudio} />
+        </Seccion>
+      )}
     </div>
   );
 }

@@ -122,7 +122,7 @@ function PanelVivo({ datos, rep, compacto = false }: { datos: DatosAnimacion; re
   return (
     <aside className={`panel-vivo${compacto ? ' compacto' : ''}`} aria-label="Indicadores en vivo">
       <div className="grupo-ind">
-        <h3>Pacientes</h3>
+        <h2>Pacientes</h2>
         <Fila k="Llegaron" v={entero(ind.llegadas)} />
         <Fila k="Atendidos" v={entero(ind.atendidos)} tono="positivo" />
         <Fila k="Ausentes" v={entero(ind.ausentes)} />
@@ -133,7 +133,7 @@ function PanelVivo({ datos, rep, compacto = false }: { datos: DatosAnimacion; re
         )}
       </div>
       <div className="grupo-ind">
-        <h3>Ahora</h3>
+        <h2>Ahora</h2>
         {!compacto && <Fila k="En cola de admisión" v={entero(ind.enColaAdmision + ind.enAdmision)} />}
         <Fila k="En sala de espera" v={entero(ind.enSala)} tono="dato" />
         {!compacto && <Fila k="En consulta" v={entero(ind.enConsulta)} />}
@@ -141,7 +141,7 @@ function PanelVivo({ datos, rep, compacto = false }: { datos: DatosAnimacion; re
       </div>
       {!compacto && (
         <div className="grupo-ind">
-          <h3>Médicos</h3>
+          <h2>Médicos</h2>
           <table className="tabla-medicos">
             <thead>
               <tr>
@@ -173,7 +173,7 @@ function PanelVivo({ datos, rep, compacto = false }: { datos: DatosAnimacion; re
         </div>
       )}
       <div className="grupo-ind grupo-economia">
-        <h3>Acumulado del día</h3>
+        <h2>Acumulado del día</h2>
         <div className="cifra-b">
           <span>Beneficio neto B</span>
           <strong className="num">{compacto ? pesosCompacto(ind.B) : pesos(ind.B)}</strong>
@@ -194,7 +194,7 @@ function Leyenda() {
       <ul>
         {(['turno', 'sobreturno', 'tardio', 'espontaneo', 'urgencia'] as const).map((c) => (
           <li key={c}>
-            <Pictograma clase={c} /> {NOMBRES_CLASE[c]}
+            <Pictograma clase={c} placa /> {NOMBRES_CLASE[c]}
           </li>
         ))}
       </ul>

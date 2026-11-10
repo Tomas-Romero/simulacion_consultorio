@@ -87,7 +87,7 @@ export function Inicio() {
           <ul className="leyenda-clases" aria-label="Clases de paciente">
             {(['turno', 'sobreturno', 'tardio', 'espontaneo', 'urgencia'] as const).map((c) => (
               <li key={c}>
-                <Pictograma clase={c} /> {NOMBRES_CLASE[c]}
+                <Pictograma clase={c} placa /> {NOMBRES_CLASE[c]}
               </li>
             ))}
           </ul>

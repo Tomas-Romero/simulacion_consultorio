@@ -250,12 +250,15 @@ export class DibujantePlano {
     zona(pl.admision);
     zona(pl.sala);
 
-    // Carteles (señalética): placa oscura con texto claro y flecha de recorrido
-    const cartel = (texto: string, x: number, y: number, flecha: '→' | '↓' | '←' | null): void => {
-      const f = this.fsMin(11, 10);
-      ctx.font = `600 ${f}px ${FUENTE}`;
+    // Carteles (señalética): placa oscura con texto claro y flecha de recorrido. Tamaño pensado para
+    // leerse en un proyector: nunca menos de 13 px en pantalla. `ancla` alinea por la esquina inferior derecha.
+    const cartel = (texto: string, x0: number, y0: number, flecha: '→' | '↓' | '←' | null, ancla: 'arriba-izquierda' | 'abajo-derecha' = 'arriba-izquierda'): void => {
+      const f = this.fsMin(14, 13);
+      ctx.font = `700 ${f}px ${FUENTE}`;
       const w = ctx.measureText(texto).width + (flecha ? f * 2.2 : 0) + f * 1.4;
       const h = f * 2;
+      const x = ancla === 'abajo-derecha' ? x0 - w : x0;
+      const y = ancla === 'abajo-derecha' ? y0 - h : y0;
       ctx.fillStyle = p.texto;
       rrect(ctx, x, y, w, h, 4);
       ctx.fill();
@@ -267,7 +270,9 @@ export class DibujantePlano {
         const ax = x + w - f * 1.5;
         const ay = y + h / 2;
         ctx.strokeStyle = p.panel;
-        ctx.lineWidth = Math.max(1.5, f * 0.14);
+        ctx.lineWidth = Math.max(2.2, f * 0.2);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.beginPath();
         if (flecha === '→') {
           ctx.moveTo(ax - f * 0.45, ay);
@@ -295,7 +300,7 @@ export class DibujantePlano {
       cartel('ADMISIÓN', pl.admision.x + 10, pl.admision.y + 10, null);
       cartel('SALA DE ESPERA', pl.sala.x + 10, pl.sala.y + 10, null);
       cartel('ENTRADA', pl.edificio.x + 12, pl.puerta.y1 + 10, '→');
-      cartel('SALIDA', pl.salida.x0 - 92, pl.edificio.y + pl.edificio.h - 36, '↓');
+      cartel('SALIDA', pl.salida.x0 - 8, pl.edificio.y + pl.edificio.h - 12, '↓', 'abajo-derecha');
     }
 
     // Mostrador y recepcionistas
@@ -389,13 +394,14 @@ export class DibujantePlano {
     const ctx = this.ctx;
     const p = this.paleta;
     ctx.fillStyle = p.texto;
-    rrect(ctx, 560, 600, 150, 64, 6);
+    // A la izquierda del cartel de SALIDA, que en la miniatura es grande (legible en proyector).
+    rrect(ctx, 400, 600, 150, 64, 6);
     ctx.fill();
     ctx.fillStyle = p.panel;
     ctx.font = `600 40px ${TITULO}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(hhmm(t), 635, 634);
+    ctx.fillText(hhmm(t), 475, 634);
   }
 
   private dibujarConsultorios(t: number, ind: Indicadores): void {

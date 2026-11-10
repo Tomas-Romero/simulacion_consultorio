@@ -1,4 +1,4 @@
-# Capturas de la interfaz (pasos #3 a #5)
+# Capturas de la interfaz (pasos #3 a #6)
 
 Generadas con Chrome sin interfaz (`--headless=new`, protocolo DevTools). Viewport de 1440 × 900
 salvo indicación; "página completa" = captura de toda la altura. Escenarios en sus valores
@@ -19,7 +19,7 @@ predefinidos (congelados) y semilla 2026.
 | `11-resultados-claro.png` | Resultados del día: resumen, Gantt por profesional, pacientes en sala, espera por clase, desglose de B y C y tabla por profesional (página completa) |
 | `12-resultados-oscuro.png` | Resultados del día en modo oscuro (página completa) |
 | `13-acerca-claro.png` | Acerca de: problema, temas de la materia, metodología y validación, limitaciones, autoría y crédito TARC Tech (página completa) |
-| `14-datos-oscuro.png` | Pantalla del paso #6 (todavía vacía, con su descripción) |
+| `14-datos-oscuro.png` | Datos (paso #6), primera pantalla en modo oscuro: escenario en JSON |
 | `15-diagnostico-claro.png` | Página de diagnóstico del paso #1 integrada al sitio (`#/diagnostico`) |
 | `16-movil-inicio-claro.png` | Inicio en celular (390 px, página completa) |
 | `17-movil-simulacion-oscuro.png` | Simulación en celular: planta simplificada y panel debajo (390 px, página completa) |
@@ -39,3 +39,12 @@ predefinidos (congelados) y semilla 2026.
 | `31-ds-numerico-claro.png` | Convergencia Euler/RK4 según dt y equilibrio analítico contra simulado |
 | `32-ds-estructura-oscuro.png` | Diagramas de la dinámica en modo oscuro |
 | `33-ds-politicas-oscuro.png` | Tres políticas en modo oscuro |
+| `34-ds-sensibilidad-claro.png` | Sensibilidad de la dinámica (#6): tornados de la ventaja del adaptativo en beneficio y en perdidos, y tabla de qué política gana en cada variante |
+| `35-datos-tiempos-claro.png` | Datos: ajuste de los tiempos de atención de ejemplo (tabla MV, KS, χ²), histograma con densidades, QQ y vista previa de lo que cambia en el escenario |
+| `36-datos-asistencia-claro.png` | Datos: regresión logística del ausentismo (β₀, β₁ con EE e IC) y proporciones observadas con IC de Wilson |
+| `37-datos-tiempos-oscuro.png` | Ajuste de tiempos en modo oscuro |
+| `38-reporte-claro.png` | Reporte imprimible en pantalla: escenario, un día simulado y el laboratorio corrido en la captura 25 (página completa) |
+| `39-reporte-impresion.png` | El mismo reporte con los estilos de impresión (sin banda ni pie, siempre en claro aunque la pantalla esté en oscuro) |
+
+Las capturas 7, 8 y 1 muestran los carteles de la planta agrandados para proyector (#6), y 1, 7 y 11
+los pictogramas sobre placa en las leyendas.

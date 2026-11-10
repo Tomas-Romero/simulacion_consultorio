@@ -27,9 +27,10 @@ export const IconoReiniciar = (p: P) => (
     <path d="M4 3.5v3.2h3.2" />
   </Icono>
 );
+/** Flecha de recorrido (señalética): trazo más pesado que el resto de los íconos. */
 export const IconoFlecha = (p: P) => (
-  <Icono {...p}>
-    <path d="M4 10h12M11 5l5 5-5 5" />
+  <Icono strokeWidth={2.6} {...p}>
+    <path d="M3.5 10h12.5M11 4.5l5.5 5.5-5.5 5.5" />
   </Icono>
 );
 export const IconoFlechaAbajo = (p: P) => (

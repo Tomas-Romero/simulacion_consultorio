@@ -1,5 +1,6 @@
 /** Carga del estudio precalculado (public/resultados/estudio.json), una sola vez por sesión. */
 import { useEffect, useState } from 'react';
+import type { FilaSensibilidad, ParametrosLista, tablaConvergencia } from '../../dinamica';
 import type { ResultadoEstudio } from '../../experimentos/estudio';
 
 export type EstudioPublicado = ResultadoEstudio & { generado: string; entorno: { motor: string; hilos: number; segundos: number } };
@@ -75,6 +76,35 @@ export function useComplementos(): ComplementosPublicados | null {
     };
   }, []);
   return c;
+}
+
+/** Resultados de la dinámica de sistemas (public/resultados/dinamica.json, npm run dinamica). */
+export interface DinamicaPublicada {
+  parametros: ParametrosLista;
+  kFijo: number;
+  sensibilidad: FilaSensibilidad[];
+  convergencia: ReturnType<typeof tablaConvergencia>;
+}
+
+let promesaDinamica: Promise<DinamicaPublicada> | null = null;
+
+export function useDinamicaPublicada(): DinamicaPublicada | null {
+  const [d, setD] = useState<DinamicaPublicada | null>(null);
+  useEffect(() => {
+    let vigente = true;
+    promesaDinamica ??= fetch('./resultados/dinamica.json').then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json() as Promise<DinamicaPublicada>;
+    });
+    promesaDinamica.then(
+      (x) => vigente && setD(x),
+      () => (promesaDinamica = null),
+    );
+    return () => {
+      vigente = false;
+    };
+  }, []);
+  return d;
 }
 
 export function descargarTexto(nombre: string, contenido: string, tipo = 'text/csv;charset=utf-8'): void {

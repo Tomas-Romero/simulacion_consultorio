@@ -3,7 +3,6 @@ import { Marco } from '../componentes/Marco';
 import { Acerca } from '../paginas/Acerca';
 import { Escenario } from '../paginas/Escenario';
 import { Inicio } from '../paginas/Inicio';
-import { Proximamente } from '../paginas/Proximamente';
 import { Simulacion } from '../paginas/Simulacion';
 import { cargarPreset, editarEscenario, setComparacion } from './estado';
 import { useUbicacion, type Ruta } from './rutas';
@@ -14,6 +13,8 @@ if (import.meta.env.DEV) (window as unknown as { __app: object }).__app = { carg
 const Resultados = lazy(() => import('../paginas/Resultados'));
 const Experimentos = lazy(() => import('../paginas/experimentos/Experimentos'));
 const Dinamica = lazy(() => import('../paginas/dinamica/Dinamica'));
+const Datos = lazy(() => import('../paginas/datos/Datos'));
+const Reporte = lazy(() => import('../paginas/reporte/Reporte'));
 const Diagnostico = lazy(() => import('../diagnostico/PaginaDiagnostico').then((m) => ({ default: m.PaginaDiagnostico })));
 
 const TITULOS: Record<Ruta, string> = {
@@ -24,6 +25,7 @@ const TITULOS: Record<Ruta, string> = {
   experimentos: 'Experimentos · Sobreturnos',
   dinamica: 'Dinámica de sistemas · Sobreturnos',
   datos: 'Datos · Sobreturnos',
+  reporte: 'Reporte · Sobreturnos',
   acerca: 'Acerca de · Sobreturnos',
   diagnostico: 'Diagnóstico del motor · Sobreturnos',
 };
@@ -66,7 +68,10 @@ export function App() {
       pagina = <Dinamica />;
       break;
     case 'datos':
-      pagina = <Proximamente ruta={ruta} />;
+      pagina = <Datos />;
+      break;
+    case 'reporte':
+      pagina = <Reporte />;
       break;
     case 'acerca':
       pagina = <Acerca />;

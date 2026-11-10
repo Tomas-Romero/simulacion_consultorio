@@ -21,9 +21,7 @@ const PRINCIPALES: ItemNav[] = [
   { ruta: 'resultados', texto: 'Resultados del día' },
   { ruta: 'experimentos', texto: 'Experimentos' },
   { ruta: 'dinamica', texto: 'Dinámica de sistemas' },
-];
-const PROXIMOS: ItemNav[] = [
-  { ruta: 'datos', texto: 'Datos', paso: '#6' },
+  { ruta: 'datos', texto: 'Datos' },
 ];
 
 function SelectorTema() {
@@ -80,11 +78,6 @@ export function Marco({ ruta, children }: { ruta: Ruta; children: ReactNode }) {
           <nav className={`nav${abierto ? ' abierta' : ''}`} aria-label="Secciones">
             <div className="nav-grupo">
               {PRINCIPALES.map((i) => (
-                <Enlace key={i.ruta} item={i} actual={ruta} alElegir={cerrar} />
-              ))}
-            </div>
-            <div className="nav-grupo nav-proximos" aria-label="Próximos pasos">
-              {PROXIMOS.map((i) => (
                 <Enlace key={i.ruta} item={i} actual={ruta} alElegir={cerrar} />
               ))}
             </div>

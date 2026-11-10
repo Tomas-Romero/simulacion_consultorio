@@ -4,10 +4,11 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { POLITICAS_SOBRETURNO, type PoliticaSobreturno } from '../../../modelo';
-import { aplicarNivel, Cancelado, compararEstudios, costosDe, crearSerie, curvaDe, extenderSeries, correrEstudio, type Comparacion, type CurvaSerie } from '../../../experimentos';
+import { aplicarNivel, Cancelado, compararEstudios, costosDe, crearSerie, curvaDe, extenderSeries, correrEstudio, type Comparacion } from '../../../experimentos';
 import { aCSV } from '../../../experimentos/csv';
 import { crearPoolWeb, hilosDisponibles } from '../../../experimentos/pool-web';
 import { NOMBRES_POLITICA, PRESETS_APP, useEstado } from '../../app/estado';
+import { guardarLaboratorio, useLaboratorio } from '../../app/laboratorio';
 import { leerPaleta } from '../../animacion/dibujo';
 import { Figura } from '../../componentes/Figura';
 import { TablaDatos } from '../../componentes/TablaDatos';
@@ -15,15 +16,6 @@ import { decimal, entero, pesos } from '../../formato';
 import type { EstudioPublicado } from '../../simulacion/estudio';
 import { opcionCurvas, SIMBOLO_POLITICA } from './graficos';
 
-interface ResultadoLab {
-  ks: number[];
-  R: number;
-  semilla: number;
-  segundos: number;
-  hilos: number;
-  curvas: { politica: PoliticaSobreturno; curva: CurvaSerie }[];
-  escenario: string;
-}
 
 function Progreso({ texto, hechas, total, alCancelar }: { texto: string; hechas: number; total: number; alCancelar: () => void }) {
   const u = total > 0 ? hechas / total : 0;
@@ -50,7 +42,7 @@ export function Laboratorio({ estudio }: { estudio: EstudioPublicado | null }) {
   const [R, setR] = useState(500);
   const [politicas, setPoliticas] = useState<PoliticaSobreturno[]>(['intercalado', 'mayor_ausentismo']);
   const [estado, setEstado] = useState<{ tipo: 'quieto' } | { tipo: 'corriendo'; texto: string; hechas: number; total: number } | { tipo: 'error'; mensaje: string }>({ tipo: 'quieto' });
-  const [resultado, setResultado] = useState<ResultadoLab | null>(null);
+  const resultado = useLaboratorio();
   const [reproduccion, setReproduccion] = useState<{ segundos: number; huella: string; hilos: number; comparacion: Comparacion | null } | null>(null);
   const control = useRef<AbortController | null>(null);
   const pool = useRef<ReturnType<typeof crearPoolWeb> | null>(null);
@@ -73,7 +65,7 @@ export function Laboratorio({ estudio }: { estudio: EstudioPublicado | null }) {
         { senal: control.current.signal, alAvanzar: (hechas, total) => setEstado({ tipo: 'corriendo', texto: `Simulando ${entero(ks.length * politicas.length * R)} días`, hechas, total }) },
       );
       const c = costosDe(valido);
-      setResultado({ ks, R, semilla, segundos: (performance.now() - t0) / 1000, hilos: obtenerPool().hilos, curvas: series.map(({ politica, serie }) => ({ politica, curva: curvaDe(serie, ks, c).curva })), escenario: nombreEsc });
+      guardarLaboratorio({ ks, R, semilla, segundos: (performance.now() - t0) / 1000, hilos: obtenerPool().hilos, curvas: series.map(({ politica, serie }) => ({ politica, curva: curvaDe(serie, ks, c).curva })), escenario: nombreEsc, cuando: Date.now() });
       setEstado({ tipo: 'quieto' });
     } catch (e) {
       setEstado(e instanceof Cancelado ? { tipo: 'quieto' } : { tipo: 'error', mensaje: e instanceof Error ? e.message : String(e) });

@@ -36,7 +36,8 @@ ws.addEventListener('message', (e) => {
 const cdp = (method, params = {}) => new Promise((r) => { const n = ++id; pend.set(n, r); ws.send(JSON.stringify({ id: n, method, params })); });
 const evaluar = async (expr) => (await cdp('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true })).result?.result?.value;
 
-// [archivo, ruta, tema, ancho, alto, página completa, preparación (JS), espera ms, selector (opcional: captura solo ese elemento)]
+// [archivo, ruta, tema, ancho, alto, página completa, preparación (JS), espera ms, selector (opcional: captura solo ese elemento), medio ('print' opcional)]
+const EJEMPLO = "setTimeout(() => [...document.querySelectorAll('button')].filter((b) => b.textContent.includes('Usar datos de ejemplo')).forEach((b) => b.click()), 800)";
 const CAPTURAS = [
   ['01-inicio-claro', '', 'claro', 1440, 900, false, '', 2500],
   ['02-inicio-oscuro', '', 'oscuro', 1440, 900, false, '', 2500],
@@ -71,12 +72,19 @@ const CAPTURAS = [
   ['31-ds-numerico-claro', '#/dinamica', 'claro', 1440, 900, false, '', 3500, '#numerico'],
   ['32-ds-estructura-oscuro', '#/dinamica', 'oscuro', 1440, 900, false, '', 3000, '#estructura'],
   ['33-ds-politicas-oscuro', '#/dinamica', 'oscuro', 1440, 900, false, '', 3500, '#politicas-ds'],
+  ['34-ds-sensibilidad-claro', '#/dinamica', 'claro', 1440, 900, false, '', 3500, '#sensibilidad-ds'],
+  ['35-datos-tiempos-claro', '#/datos', 'claro', 1440, 900, false, EJEMPLO, 3000, '#tiempos'],
+  ['36-datos-asistencia-claro', '#/datos', 'claro', 1440, 900, false, EJEMPLO, 3000, '#asistencia'],
+  ['37-datos-tiempos-oscuro', '#/datos', 'oscuro', 1440, 900, false, EJEMPLO, 3000, '#tiempos'],
+  // El reporte incluye el laboratorio si antes se corrió la captura 25 (sessionStorage de la misma pestaña).
+  ['38-reporte-claro', '#/reporte', 'claro', 1440, 900, true, '', 3500],
+  ['39-reporte-impresion', '#/reporte', 'oscuro', 1000, 900, true, '', 3500, '', 'print'],
 ];
 
-for (const [archivo, ruta, tema, w, h, completa, prep, ms, selector] of CAPTURAS) {
+for (const [archivo, ruta, tema, w, h, completa, prep, ms, selector, medio] of CAPTURAS) {
   if (FILTRO && !archivo.includes(FILTRO)) continue;
   await cdp('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: w < 500 ? 2 : 1, mobile: w < 500 });
-  await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: tema === 'oscuro' ? 'dark' : 'light' }] });
+  await cdp('Emulation.setEmulatedMedia', { media: medio ?? '', features: [{ name: 'prefers-color-scheme', value: tema === 'oscuro' ? 'dark' : 'light' }] });
   // Estado limpio: preset por defecto.
   await cdp('Page.navigate', { url: BASE });
   await espera(800);
