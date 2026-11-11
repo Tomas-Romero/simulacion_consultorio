@@ -18,7 +18,8 @@ from datos_informe import (CAPTURAS, DEMO, NOMBRE_POL, NOMBRE_POL_M, NOMBRE_PRES
                            RAIZ, REPO, Datos, cient, cifras_recomendacion, conjunto, ent, f, ic, icp, pct, pesos, verificar_narrativa)
 
 PLANTILLA = RAIZ.parent / "Capitulo 4 - Practica TP3" / "TP4_Romero Tomas_Caminante_al_Azar.docx"
-SALIDA = RAIZ / "informe" / "Proyecto_Integrador_Simulacion_Romero.docx"
+SALIDA = RAIZ / "informe" / "Proyecto_Integrador_Simulacion_Romero.docx"            # versión de entrega (por defecto)
+SALIDA_COMPLETO = RAIZ / "informe" / "Proyecto_Integrador_Simulacion_Romero_completo.docx"  # versión larga (--completo)
 DIR_FIG = RAIZ / "informe" / "figuras"
 TEXTOS = RAIZ / "informe" / "textos_respuesta.md"
 
@@ -38,6 +39,11 @@ def gan(c: dict) -> str:
 
 
 class Informe:
+    """Versión completa (larga) del informe; la de entrega está en entrega.py y reutiliza estos métodos."""
+    FIGURAS = FIGURAS
+    TABLAS = TABLAS
+    SALIDA = SALIDA_COMPLETO
+
     def __init__(self, d: Datos):
         self.d = d
         self.doc = u.crear_documento(PLANTILLA)
@@ -46,11 +52,11 @@ class Informe:
         self.textos = {}
 
     # ---------------------------------------------------------------- utilidades con verificación de orden
-    def F(self, id_):
-        return f"Figura {FIGURAS.index(id_) + 1}"
+    def F(self, id_):  # noqa: N802
+        return f"Figura {self.FIGURAS.index(id_) + 1}"
 
-    def T(self, id_):
-        return f"Tabla {TABLAS.index(id_) + 1}"
+    def T(self, id_):  # noqa: N802
+        return f"Tabla {self.TABLAS.index(id_) + 1}"
 
     def h1(self, texto, salto=True):
         self.doc.add_heading(texto, level=1).paragraph_format.page_break_before = salto
@@ -73,12 +79,12 @@ class Informe:
 
     def figura(self, id_, ruta, texto, ancho=u.ANCHO_TEXTO_CM):
         self.fig += 1
-        assert FIGURAS[self.fig - 1] == id_, f"orden de figuras: se esperaba {FIGURAS[self.fig - 1]}, llegó {id_}"
+        assert self.FIGURAS[self.fig - 1] == id_, f"orden de figuras: se esperaba {self.FIGURAS[self.fig - 1]}, llegó {id_}"
         u.figura(self.doc, ruta, self.fig, texto, ancho)
 
     def tabla(self, id_, texto, enc, filas, **kw):
         self.tab += 1
-        assert TABLAS[self.tab - 1] == id_, f"orden de tablas: se esperaba {TABLAS[self.tab - 1]}, llegó {id_}"
+        assert self.TABLAS[self.tab - 1] == id_, f"orden de tablas: se esperaba {self.TABLAS[self.tab - 1]}, llegó {id_}"
         u.tabla_datos(self.doc, self.tab, texto, enc, filas, **kw)
 
     # ---------------------------------------------------------------- carátula, índice y resumen
@@ -1129,12 +1135,6 @@ class Informe:
         self.tabla("tests", "Catálogo de pruebas automatizadas", ["Archivo", "Tests", "Qué controla"],
                    [[a["archivo"], str(a["tests"]), "; ".join(a["grupos"])[:230]] for a in t["archivos"]],
                    anchos=[4.6, 1.2, 10.2], alinear=[u.IZQUIERDA, u.CENTRO, u.IZQUIERDA], tam=8, mantener_junta=False)
-        self.h1("Anexo D. Declaración de uso de herramientas de inteligencia artificial")
-        self.p("El desarrollo del código y la redacción de este informe se hicieron con asistencia de Claude (Anthropic), un modelo de "
-               "lenguaje, bajo un método de trabajo en dos niveles: un asistente analizó y planificó cada paso y otro lo implementó y "
-               "reportó los resultados. El alumno definió el problema, tomó las decisiones de modelado y de criterio, revisó y validó cada "
-               "resultado y fue el intermediario entre ambos. Todos los números del informe provienen de la ejecución del código del "
-               "proyecto, y las referencias bibliográficas se verificaron en las bases de datos de las editoriales.")
 
     # ---------------------------------------------------------------- ensamblado
     def construir(self):
@@ -1152,17 +1152,23 @@ class Informe:
         self.conclusiones()
         self.referencias()
         self.anexos()
-        assert self.fig == len(FIGURAS) and self.tab == len(TABLAS), f"faltan figuras ({self.fig}/{len(FIGURAS)}) o tablas ({self.tab}/{len(TABLAS)})"
+        self.guardar()
+
+    def guardar(self):
+        assert self.fig == len(self.FIGURAS) and self.tab == len(self.TABLAS), \
+            f"faltan figuras ({self.fig}/{len(self.FIGURAS)}) o tablas ({self.tab}/{len(self.TABLAS)})"
         u.numerar_paginas(self.doc)
         u.finalizar(self.doc)
         prop = self.doc.core_properties
         prop.title = "Proyecto Integrador — Sobreturnos: simulación de un policonsultorio"
         prop.author = "Tomás Agustín Romero"
         prop.subject = "Simulación — UTN FRSR"
-        SALIDA.parent.mkdir(exist_ok=True)
-        self.doc.save(SALIDA)
-        TEXTOS.write_text("\n\n".join(f"## {k}\n\n" + "\n\n".join(v) for k, v in self.textos.items()), encoding="utf-8")
-        print(f"  [informe] {SALIDA.relative_to(RAIZ)} ({self.fig} figuras, {self.tab} tablas)")
+        self.SALIDA.parent.mkdir(exist_ok=True)
+        self.doc.save(self.SALIDA)
+        if self.textos:
+            TEXTOS.with_name(self.SALIDA.stem + "_textos.md").write_text(
+                "\n\n".join(f"## {k}\n\n" + "\n\n".join(v) for k, v in self.textos.items()), encoding="utf-8")
+        print(f"  [informe] {self.SALIDA.relative_to(RAIZ)} ({self.fig} figuras, {self.tab} tablas)")
 
 
 def actualizar_readme(d: Datos):
@@ -1199,14 +1205,24 @@ def main():
     if "--readme" in sys.argv:
         actualizar_readme(d)
         return
+    import calculos
     n = verificar_narrativa(d)
-    print(f"  [verificación] {n} afirmaciones del texto respaldadas por los resultados")
-    Informe(d).construir()
+    r = calculos.resolver(d)
+    fallas = calculos.verificar_calculos(d, r)
+    if fallas:
+        raise AssertionError("Un cálculo resuelto no coincide con su función de referencia: " + "; ".join(fallas))
+    print(f"  [verificación] {n} afirmaciones del texto y {calculos.CANTIDAD} cálculos resueltos respaldados por los resultados")
     import guion
-    guion.generar(d)
+    if "--completo" in sys.argv:
+        informe, salida_guion = Informe(d), guion.generar(d)
+    else:
+        import entrega
+        informe = entrega.InformeEntrega(d, r)
+        salida_guion = guion.generar_entrega(d, r)
+    informe.construir()
     if "--sin-pdf" not in sys.argv:
         import a_pdf
-        a_pdf.exportar([SALIDA, guion.SALIDA])
+        a_pdf.exportar([informe.SALIDA, salida_guion])
 
 
 if __name__ == "__main__":

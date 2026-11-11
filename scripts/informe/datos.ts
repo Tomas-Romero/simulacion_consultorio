@@ -10,7 +10,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CASOS_VALIDACION, REPLICAS_VALIDACION, SEMILLA_VALIDACION, validarCaso } from '../../src/motor';
+import { CASOS_VALIDACION, empiricaDiscreta, FabricaFlujos, lognormal, PoissonNoHomogeneo, REPLICAS_VALIDACION, SEMILLA_VALIDACION, validarCaso, type FuenteUniforme } from '../../src/motor';
 import {
   COMPARACIONES_MODELO,
   cumpleMetas,
@@ -21,10 +21,12 @@ import {
   PRESET_POLICONSULTORIO_3,
   REPLICAS_MODELO,
   SEMILLA_MODELO,
+  simularDia,
   validarJackson,
   validarMG1,
 } from '../../src/modelo';
-import { compararPoliticas, demandaCalibrada, equilibrios, parametrosBase, tablaDesdeEstudio } from '../../src/dinamica';
+import { auxiliares, compararPoliticas, demandaCalibrada, equilibrio, equilibrios, parametrosBase, tablaDesdeEstudio } from '../../src/dinamica';
+import { aplicarNivel } from '../../src/experimentos';
 import {
   aplicarTiempos,
   compararAjustes,
@@ -260,6 +262,66 @@ cache('navegador', () => {
   const dif = texto.match(/difieren a lo sumo en ([\d.e+-]+) relativo/);
   if (!dec) throw new Error(`no se pudo leer la comparación del navegador (¿npm run dev corriendo?):\n${texto}\n${r.stderr}`);
   return { decisionesIguales: Number(dec[1]), decisiones: Number(dec[2]), segundos: seg ? Number(seg[1]) : null, hilos: hilos ? Number(hilos[1]) : null, maxDifRelativa: dif ? Number(dif[1]) : null, huellaIgual: /idéntica bit a bit/.test(texto), texto: texto.trim() };
+});
+
+// ------------------------------------------------------------------ cálculos resueltos de la versión de entrega (#7c)
+// Todos los valores salen del generador y de las funciones del proyecto; Python los recalcula como verificación.
+cache('calculos', () => {
+  const e = PRESET_POLICONSULTORIO_3;
+  const fija = (u: number): FuenteUniforme => ({ uniforme: () => u });
+  // 1. Transformada inversa con uniformes reales del generador (semilla 2026, flujo propio del ejemplo).
+  const g = new FabricaFlujos(2026, 0).flujo('ejemplo-informe');
+  const u = { anticipacion: g.uniforme(), falta: g.uniforme(), atencion: g.uniforme(), paciencia: g.uniforme() };
+  const at = e.pacientes.atencion;
+  const prof = e.profesionales[0]!;
+  const factorAt = lognormal(1, at.cv).muestrear(fija(u.atencion));
+  const pac = e.espontaneos.paciencia as { tipo: 'lognormal'; media: number; cv: number };
+  const paciencia = lognormal(pac.media, pac.cv).muestrear(fija(u.paciencia));
+  const anticipacion = empiricaDiscreta(e.pacientes.anticipacion).muestrear(fija(u.anticipacion));
+  const pDe = (d: number): number => 1 / (1 + Math.exp(-(e.ausentismo.beta0 + e.ausentismo.beta1 * d)));
+  // 2. Poisson no homogéneo por thinning: los primeros candidatos, paso a paso, y control contra el generador del motor.
+  const tasas = e.espontaneos.tasasPorHora;
+  const pnh = new PoissonNoHomogeneo(tasas.map((t, i) => ({ desde: e.jornada.inicio + 60 * i, hasta: e.jornada.inicio + 60 * (i + 1), tasa: t / 60 })));
+  const gt = new FabricaFlujos(2026, 0).flujo('ejemplo-thinning');
+  const candidatos: { u1: number; t: number; lambda: number; u2: number; acepta: boolean }[] = [];
+  let t = e.jornada.inicio;
+  while (candidatos.length < 6) {
+    const u1 = gt.uniforme();
+    t -= Math.log(u1) / pnh.tasaMaxima;
+    const u2 = gt.uniforme();
+    const lambda = pnh.tasaEn(t);
+    candidatos.push({ u1, t, lambda, u2, acepta: u2 * pnh.tasaMaxima < lambda });
+  }
+  const llegadasMotor = pnh.generar(new FabricaFlujos(2026, 0).flujo('ejemplo-thinning'), e.jornada.inicio, e.jornada.fin);
+  // 3. Monte Carlo: los días del estudio (semilla 2026600) del policonsultorio con su política ganadora, k = 0 y k = 2.
+  const R = 2000;
+  const dia = (k: number): number[] => {
+    const prep = prepararEscenario(aplicarNivel(e, { k, politica: 'mayor_ausentismo', ausentismo: null }));
+    return Array.from({ length: R }, (_, r) => simularDia(prep, { semilla: 2026600, replica: r, traza: false, serie: false }).metricas.beneficio);
+  };
+  const b0 = dia(0);
+  const b2 = dia(2);
+  // 4. Ley de Little sobre un día del modelo (policonsultorio, semilla 2026, réplica 0).
+  const little = simularDia(prepararEscenario(e), { semilla: 2026, replica: 0, serie: false }).metricas.little;
+  // 5. Dinámica de sistemas: un paso de Euler al empezar el pico, desde el consultorio de hoy, con k = 0.
+  const prm = parametrosBase();
+  const L0 = equilibrio({ ...prm, pico: null }, 0).L;
+  const t0 = prm.pico!.inicio * 7;
+  const x = auxiliares(prm, t0, L0, 0);
+  const dL = x.D * (1 - x.d) + prm.reingreso * x.p * x.S - x.S;
+  const dt = 0.25;
+  return {
+    transformada: {
+      u, factorAtencion: factorAt, cvAtencion: at.cv, factorControl: at.factorControl, D: prof.duracionTurno, nombreProfesional: prof.nombre,
+      duracion: factorAt * at.factorControl * prof.duracionTurno, paciencia, pacienciaMedia: pac.media, pacienciaCv: pac.cv,
+      tablaAnticipacion: e.pacientes.anticipacion, anticipacion, pFalta: pDe(anticipacion), falta: u.falta < pDe(anticipacion),
+      p1: pDe(1), p30: pDe(30), beta0: e.ausentismo.beta0, beta1: e.ausentismo.beta1,
+    },
+    thinning: { tasasPorHora: tasas, tasaMaximaPorMin: pnh.tasaMaxima, inicio: e.jornada.inicio, candidatos, llegadasMotor: llegadasMotor.slice(0, 6), totalMotor: llegadasMotor.length, esperado: pnh.esperadoEntre(e.jornada.inicio, e.jornada.fin) },
+    montecarlo: { R, semilla: 2026600, b0, b2 },
+    little,
+    euler: { t0, L0, dt, C: x.C, a: x.a, p: x.p, d: x.d, D: x.D, S: x.S, r: prm.reingreso, dL, L1: L0 + dt * dL },
+  };
 });
 
 console.log('  [datos] listo: informe/datos/');

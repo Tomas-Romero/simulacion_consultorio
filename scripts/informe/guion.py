@@ -5,7 +5,8 @@ resultados que el informe (datos_informe.Datos)."""
 import docx_utils as u
 from datos_informe import DEMO, NOMBRE_POL, NOMBRE_POL_M, NOMBRE_PRESET_M, PRESETS, RAIZ, REPO, Datos, cient, cifras_recomendacion, ent, f, pct, pesos
 
-SALIDA = RAIZ / "informe" / "Guion_Defensa_Romero.docx"
+SALIDA = RAIZ / "informe" / "Guion_Defensa_Romero.docx"                 # versión de entrega (por defecto)
+SALIDA_COMPLETO = RAIZ / "informe" / "Guion_Defensa_Romero_completo.docx"  # versión larga (--completo)
 PLANTILLA = RAIZ.parent / "Capitulo 4 - Practica TP3" / "TP4_Romero Tomas_Caminante_al_Azar.docx"
 
 
@@ -150,8 +151,6 @@ def generar(d: Datos):
          "Datos ficticios; el abandono por encima de la meta; una misma política de cupos para todas las especialidades; urgencias que no interrumpen; la convención de 1,5 para la hora extra; y en la lista de espera, supuestos sin dato (reingreso, desaliento, pico) evaluados de a uno."),
         ("¿Por qué el resultado del navegador no es idéntico al de Node?",
          f"Node y Chrome redondean distinto el último bit de Math.exp y Math.log. El beneficio de un día difiere en ~10⁻¹⁶ relativo; las {nav['decisiones']} decisiones del estudio son idénticas."),
-        ("¿Qué hizo la IA y qué hiciste vos?",
-         "Usé Claude como asistente para programar y redactar, con un método en dos niveles. Yo definí el problema, tomé las decisiones de modelado y de criterio y revisé y validé cada resultado. Está declarado en el informe."),
     ]
     for i, (q, r) in enumerate(preguntas, 1):
         par = p(f"**{i}. {q}**", despues=1, alinear=u.IZQUIERDA)
@@ -173,6 +172,130 @@ def generar(d: Datos):
     prop = doc.core_properties
     prop.title = "Guion de la defensa — Sobreturnos"
     prop.author = "Tomás Agustín Romero"
+    doc.save(SALIDA_COMPLETO)
+    print(f"  [guion]   {SALIDA_COMPLETO.relative_to(RAIZ)} ({len(preguntas)} preguntas)")
+    return SALIDA_COMPLETO
+
+
+def generar_entrega(d: Datos, r: dict):
+    """Guion corto (unas 3 páginas) para la versión de entrega: exposición de 10 a 12 minutos centrada en los temas de la materia."""
+    import math
+
+    from scipy import stats
+
+    doc = u.crear_documento(PLANTILLA)
+    t = {"n": 0}
+
+    def tabla(texto, enc, filas, **kw):
+        t["n"] += 1
+        u.tabla_datos(doc, t["n"], texto, enc, filas, **kw)
+
+    def p(texto, **kw):
+        kw.setdefault("interlineado", 1.05)
+        kw.setdefault("despues", 4)
+        return u.parrafo(doc, texto, **kw)
+
+    cr = cifras_recomendacion(d)
+    ic_, bo, mm, li, pk, ds, tr = r["ic"], r["bonferroni"], r["mm3"], r["little"], r["pk"], r["ds"], r["transformada"]
+    fl = d.comp["fluido"]
+    bi = d.dinamica_extra["biestabilidad"]
+    eq0 = next(x for x in d.din["equilibrios"] if x["k"] == 0)["eqs"][0]
+    des = ds["desaliento"]
+    pac = stats.lognorm(tr["sigmap"], scale=math.exp(tr["mup"]))
+    rec = "; ".join(f"{NOMBRE_PRESET_M[x].lower()}: {cr[x]['k']} {NOMBRE_POL[cr[x]['politica']]}" for x in PRESETS)
+
+    u.parrafo(doc, "Simulación · UTN FRSR · 2026", alinear=u.CENTRO, despues=2, interlineado=None, tam=11, color=u.GRIS)
+    u.parrafo(doc, "Guion de la exposición", alinear=u.CENTRO, despues=2, interlineado=None, tam=18, negrita=True, color=u.OSCURO)
+    u.parrafo(doc, "Sobreturnos: simulación de un policonsultorio", alinear=u.CENTRO, despues=2, interlineado=None, tam=13, negrita=True, color=u.NARANJA)
+    u.parrafo(doc, "Tomás Agustín Romero · Legajo 10289", alinear=u.CENTRO, despues=10, interlineado=None, tam=10.5, color=u.GRIS)
+
+    # ---------------------------------------------------------------- 1. estructura
+    doc.add_heading("1. Estructura (10 a 12 minutos)", level=1)
+    bloques = [
+        ["0:00 – 1:30", "Problema", "Parte de los pacientes con turno no viene y el médico queda ocioso. El sobreturno recupera esas horas pero trae espera y horas extra. Pregunta: cuántos y dónde. Criterio: beneficio neto B por día."],
+        ["1:30 – 2:30", "Solución", "Simulación de eventos discretos del día + Monte Carlo para decidir, teoría de colas para validar, dinámica de sistemas para la lista de espera. Herramienta: aplicación web propia."],
+        ["2:30 – 7:00", "Temas de la materia", f"Un cálculo por tema: transformada inversa (u = {f(tr['u']['atencion'], 4)} → consulta de {f(tr['duracion'], 2)} min); IC y diferencia pareada (semiancho {pesos(ic_['dif']['semi'])} contra {pesos(ic_['semiIndep'])} sin pareo); Bonferroni (t = {f(bo['t'], 2)}); M/M/3 a mano (Wq = {f(mm['Wq'], 2)} min) y Little; un paso de Euler y el equilibrio D₀."],
+        ["7:00 – 9:30", "Demo", "Tres pantallas (Sección 2): el mismo día con y sin sobreturnos, la curva B(k) y la lista de espera."],
+        ["9:30 – 11:00", "Resultados", f"Recomendación por escenario ({rec}); por qué gana cada política; sensibilidad al ausentismo; riesgo diario."],
+        ["11:00 – 12:00", "Conclusión", "La variabilidad genera la cola: un modelo de medias no alcanza. Medir el ausentismo según la anticipación y simular con datos propios. Limitaciones: datos ficticios, abandono."],
+    ]
+    tabla("Bloques de la exposición", ["Tiempo", "Bloque", "Qué decir"], bloques, anchos=[2.2, 2.6, 11.2], alinear=[u.CENTRO, u.IZQUIERDA, u.IZQUIERDA], tam=8.5)
+
+    # ---------------------------------------------------------------- 2. demo
+    doc.add_heading("2. Demo: tres pantallas", level=1)
+    p(f"Abrir el sitio antes de empezar, en modo claro y con el escenario «Policonsultorio». Todas las direcciones empiezan con **{DEMO}**.")
+    pasos = [
+        ["1", "#/simulacion?comparar=1&t=11:20", "El mismo día, con los mismos pacientes: a la izquierda sin sobreturnos, a la derecha con sobreturnos. Señalar el ocio que desaparece y la cola que aparece. Un solo día no decide: por eso Monte Carlo."],
+        ["2", "#/experimentos", "Curva B(k) por política con su banda de confianza y el conjunto de óptimos indistinguibles. Señalar que la curva es cóncava y que al final nunca conviene."],
+        ["3", "#/dinamica", "Diagrama causal (R1 refuerzo, B1–B3 balance) y las tres políticas ante el pico de demanda: con sobreturnos la lista es más corta."],
+    ]
+    tabla("Pantallas de la demo", ["Paso", "Dirección", "Qué decir"], pasos, anchos=[1, 5, 10], alinear=[u.CENTRO, u.IZQUIERDA, u.IZQUIERDA], tam=8.5)
+
+    # ---------------------------------------------------------------- 3. cifras
+    doc.add_heading("3. Cifras clave", level=1)
+    cifras = [
+        ["Transformada inversa", f"u = {f(tr['u']['atencion'], 4)} → z = {f(tr['z'], 3)} → factor {f(tr['factor'], 4)} → {f(tr['duracion'], 2)} min; paciencia {f(tr['paciencia'], 1)} min"],
+        ["IC del beneficio (R = " + ent(ic_["R"]) + ")", f"k = 2: {pesos(ic_['b2']['media'])} ± {pesos(ic_['b2']['semi'])} (t = {f(ic_['t'], 4)}, S = {pesos(ic_['b2']['S'])})"],
+        ["Diferencia pareada", f"+{pesos(ic_['dif']['media'])} ± {pesos(ic_['dif']['semi'])}; correlación {f(ic_['corr'], 3)}; sin pareo ± {pesos(ic_['semiIndep'])}"],
+        ["Bonferroni", f"m = {bo['m']}, α/m = {f(bo['alfaInd'], 4)}, t = {f(bo['t'], 4)}; conjunto de óptimos {{{', '.join(str(k) for k in bo['conjunto'])}}}"],
+        ["M/M/3 (λ = 10/h, μ = 4/h)", f"ρ = {f(mm['rho'], 4)}, P₀ = {f(mm['P0'], 4)}, C = {f(mm['C'], 4)}, Lq = {f(mm['Lq'], 3)}, Wq = {f(mm['Wq'], 2)} min (simulado {f(mm['sim']['Wq']['media'], 2)})"],
+        ["Little (un día)", f"λ = {f(li['lambda'], 5)}/min, W = {f(li['W'], 2)} min → λW = {f(li['lambdaW'], 3)} = L medido"],
+        ["Pollaczek-Khinchine", f"Wq = {f(pk['Wq'], 2)} min (cₛ = {f(pk['cv'], 1)}) contra {f(pk['WqExp'], 1)} con exponencial; simulado {f(pk['sim']['media'], 2)}"],
+        ["Equilibrio de la lista", f"C = {f(ds['C0'], 2)} turnos/día, a* = {f(ds['amedia'], 2)} días, L* = {f(ds['L0'], 1)}, D₀ = {f(ds['D0'], 2)}; Euler: L = {f(ds['L0'], 2)} → {f(ds['L1'], 2)}"],
+        ["Modelo fluido", f"subestima la espera {f(fl[0]['desEspera']['media'] / fl[0]['fluidoEspera'], 1)} veces (k = 0) y {f(fl[1]['desEspera']['media'] / fl[1]['fluidoEspera'], 1)} veces (k = {fl[1]['k']})"],
+    ]
+    for x in PRESETS:
+        c = cr[x]
+        cifras.append([f"Recomendación: {NOMBRE_PRESET_M[x].lower()}", f"{c['k']} {NOMBRE_POL[c['politica']]}: ganancia +{pesos(c['ganancia'])} por día [{pesos(c['gananciaInf'])}; {pesos(c['gananciaSup'])}]"])
+    tabla("Cifras para tener a mano", ["Tema", "Cifra"], cifras, anchos=[4.4, 11.6], alinear=[u.IZQUIERDA, u.IZQUIERDA], tam=8.5)
+
+    # ---------------------------------------------------------------- 4. preguntas
+    doc.add_heading("4. Preguntas probables", level=1)
+    preguntas = [
+        ("¿Por qué simular y no resolver con teoría de colas?",
+         "Las fórmulas exactas piden llegadas de Poisson y régimen estacionario. Acá hay turnos programados, ausentismo según la anticipación, impuntualidad, demanda sin turno con prioridades, abandono y un día que empieza vacío y termina. Las fórmulas sirven para validar el simulador en casos simplificados, no para decidir."),
+        ("¿Qué son los números aleatorios comunes y por qué achican el intervalo?",
+         f"Se comparan las configuraciones sobre los mismos días: mismas llegadas, ausencias y duraciones. Los resultados quedan correlacionados (ρ = {f(ic_['corr'], 3)}) y S_{{D}}² = S_{{0}}² + S_{{2}}² − 2ρS_{{0}}S_{{2}} es mucho menor: el semiancho de la diferencia baja de {pesos(ic_['semiIndep'])} a {pesos(ic_['dif']['semi'])}."),
+        ("¿Cómo se construye el IC y cómo se eligió R?",
+         f"B̄ ± t·S/√R con t de Student de R − 1 grados de libertad. El error baja como 1/√R (pendiente medida {f(r['e6']['pendiente'], 3)}): para la mitad de error, cuatro veces más días. Se empezó con {ent(d.est['R0'])} días y se duplicó R donde las diferencias entre k vecinos eran poco precisas."),
+        ("¿Qué hace Bonferroni y qué es el conjunto de óptimos?",
+         f"Al comparar el mejor k contra {bo['m']} valores a la vez, cada intervalo se arma con α/{bo['m']} para que el nivel conjunto sea al menos 95 % (t pasa de {f(bo['tInd'], 2)} a {f(bo['t'], 2)}). Los k cuyo intervalo contiene al cero son indistinguibles del mejor; se recomienda el menor."),
+        ("¿Por qué no hay período de calentamiento?",
+         "Porque la simulación es terminante: el día empieza vacío a las 08:00 y termina cuando se va el último paciente. No hay régimen estacionario que estimar; la mañana vacía es parte de lo que se mide. Solo la validación contra M/M/c, que compara con fórmulas estacionarias, descarta un período inicial."),
+        ("¿Cómo funciona la transformada inversa?",
+         f"Si U es uniforme en (0, 1), F⁻¹(U) tiene distribución F. Para la lognormal: z = Φ⁻¹(u) y x = e^{{μ + σz}}. Con u = {f(tr['u']['atencion'], 4)}, z = {f(tr['z'], 3)} y la consulta dura {f(tr['duracion'], 2)} min. Cada valor consume un solo uniforme, lo que permite los números aleatorios comunes."),
+        ("¿Por qué la paciencia no es exponencial?",
+         f"La exponencial no tiene memoria y su densidad es máxima en cero, así que muchos se irían en los primeros minutos (con media {f(tr['pacMedia'], 0)} min, P(< 20 min) = {pct(1 - math.exp(-20 / tr['pacMedia']), 1)}), algo poco creíble en una sala de espera. Con la lognormal de la misma media y cv {f(tr['pacCv'], 1)}, P(< 20 min) = {pct(pac.cdf(20), 1)}."),
+        ("¿Cómo se calcula la espera de una M/M/3? ¿Qué dice Little?",
+         f"a = λ/μ = {f(mm['a'], 1)}, ρ = {f(mm['rho'], 4)}; P₀ = 1/(Σaⁿ/n! + a³/(3!(1 − ρ))) = {f(mm['P0'], 4)}; Erlang C = {f(mm['C'], 4)}; Lq = Cρ/(1 − ρ) = {f(mm['Lq'], 3)} y, por Little, Wq = Lq/λ = {f(mm['Wq'], 2)} min. Little, L = λW, vale para cualquier sistema estable y se verificó en un día simulado ({f(li['lambdaW'], 3)} = {f(li['L'], 3)})."),
+        ("¿Por qué el criterio es B y no el costo C?",
+         "C trata el ocio como costo pero no premia la consulta ganada. B suma lo que se factura y resta espera, horas extra y pacientes perdidos. No son equivalentes porque las consultas en horas extra cambian la cuenta; C se informa solo como contraste."),
+        ("¿Por qué el modelo fluido falla?",
+         f"Trabaja con medias: si la capacidad media supera la entrada media, predice cola casi nula. La espera la genera la variabilidad, como muestra Pollaczek-Khinchine: la espera simulada es {f(fl[0]['desEspera']['media'] / fl[0]['fluidoEspera'], 1)} veces la del modelo de medias."),
+        ("¿Cómo se sabe si un equilibrio es estable?",
+         f"Con dL/dt = g(a), el equilibrio es estable si g′(a*) < 0: si la lista crece, el flujo neto la hace bajar. Con desaliento desde los {f(des['umbral'], 0)} días, g′ = {f(eq0['pendiente'], 2)}: único y estable. Con desaliento desde los {bi['umbral']} días aparecen tres equilibrios y el de hoy es inestable (biestabilidad); por eso se usó {f(des['umbral'], 0)}."),
+        ("¿Es válida la prueba KS con parámetros estimados?",
+         f"El valor p de Kolmogorov supone parámetros conocidos; si se estiman con la misma muestra la prueba es conservadora (corrección de Lilliefors). Se complementó con χ², que descuenta un grado de libertad por parámetro estimado (gl = k − 1 − 2 = {r['bondad']['gl']})."),
+    ]
+    for i, (q, a) in enumerate(preguntas, 1):
+        par = p(f"**{i}. {q}**", despues=1, alinear=u.IZQUIERDA)
+        par.paragraph_format.keep_with_next = True
+        p(a, despues=5)
+
+    # ---------------------------------------------------------------- 5. plan B
+    doc.add_heading("5. Plan B", level=1)
+    u.lista(doc, [
+        "Sin internet: llevar el proyecto instalado, ejecutar npm run dev y abrir las mismas direcciones con http://localhost:5173/ al comienzo. Todo corre en el navegador.",
+        "Si falla la computadora: el PDF del informe y las capturas de las tres pantallas en un pendrive.",
+    ], numerada=True)
+
+    u.numerar_paginas(doc)
+    u.finalizar(doc)
+    prop = doc.core_properties
+    prop.title = "Guion de la exposición — Sobreturnos"
+    prop.author = "Tomás Agustín Romero"
+    SALIDA.parent.mkdir(exist_ok=True)
     doc.save(SALIDA)
     print(f"  [guion]   {SALIDA.relative_to(RAIZ)} ({len(preguntas)} preguntas)")
-    return [q for q, _ in preguntas]
+    generar_entrega.preguntas = [q for q, _ in preguntas]
+    return SALIDA

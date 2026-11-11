@@ -131,9 +131,9 @@ npm run build        # typecheck + build de producción en dist/
 ```
 
 Otros comandos: `npm run validar`, `npm run validar-modelo`, `npm run estudio` (estudio Monte
-Carlo completo, ~2 min con 8 hilos), `npm run complementos`, `npm run dinamica` y `npm run informe` (informe final y guion de la defensa en .docx, con Python y
-python-docx; no se publican). La lista completa
-está en [`CLAUDE.md`](CLAUDE.md).
+Carlo completo, ~2 min con 8 hilos), `npm run complementos`, `npm run dinamica` y `npm run informe` (informe de entrega y guion en .docx y PDF, con Python y
+python-docx; `npm run informe -- --completo` genera la versión extendida; no se publican). La lista
+completa está en la sección `scripts` de [`package.json`](package.json).
 
 Cada push a `main` corre los tests y publica el sitio en GitHub Pages
 ([`.github/workflows/pages.yml`](.github/workflows/pages.yml)).
@@ -147,5 +147,3 @@ estadística: el motor, las distribuciones y las pruebas están implementados en
 
 **Tomás Romero** · Simulación, UTN Facultad Regional San Rafael, 2026.
 Diseño y desarrollo: **TARC Tech**.
-
-Desarrollado con asistencia de Claude Code bajo dirección y revisión del autor.
