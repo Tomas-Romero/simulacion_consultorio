@@ -103,7 +103,7 @@ depende de cada cuánto aparece un hueco, no de la carga total.
 
 **Conclusión:** con la regla de selección fija y las palancas permitidas, la meta de abandono no
 se puede cumplir sin bajar la utilización muy por debajo del 80 % (y aun así no llega). Se deja
-fuera de meta y se informa. Alternativas que quedan a decisión del arquitecto (ninguna aplicada):
+fuera de meta y se informa. Alternativas que quedaron pendientes de decisión (ninguna aplicada):
 reservar slots para demanda espontánea, cambiar la regla de selección (por ejemplo, intercalar
 espontáneos cada cierta cantidad de turnos, o subirlos de prioridad después de cierto tiempo de
 espera) o redefinir la meta.

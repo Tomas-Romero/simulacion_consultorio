@@ -47,7 +47,7 @@ const CAPTURAS = [
   ['06-escenario-error-claro', '#/escenario', 'claro', 1440, 900, false, "__app.editarEscenario(e => ({...e, pacientes: {...e.pacientes, proporcionPrimeraVez: 1.4}})); setTimeout(() => document.querySelector('.campo.con-error').scrollIntoView({block: 'center'}), 300)", 1500],
   ['07-simulacion-policonsultorio-claro', '#/simulacion?t=10:40', 'claro', 1440, 900, false, '', 3000],
   ['08-simulacion-centro-oscuro', '#/simulacion?t=11:10', 'oscuro', 1440, 900, false, "__app.cargarPreset('centro')", 3000],
-  ['09-comparacion-policonsultorio-claro', '#/simulacion?comparar=1&t=11:20', 'claro', 1440, 900, false, '', 3500],
+  ['09-comparacion-policonsultorio-claro', '#/simulacion?comparar=1&t=11:20', 'claro', 1440, 900, false, "__app.cargarPreset('policonsultorio')", 3500],
   ['10-comparacion-centro-oscuro', '#/simulacion?comparar=1&t=11:20', 'oscuro', 1440, 900, false, "__app.cargarPreset('centro')", 3500],
   ['11-resultados-claro', '#/resultados', 'claro', 1440, 900, true, '', 3500],
   ['12-resultados-oscuro', '#/resultados', 'oscuro', 1440, 900, true, '', 3500],

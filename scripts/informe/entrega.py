@@ -93,10 +93,11 @@ class InformeEntrega(Informe):
             "sobreturnos a más largo plazo.",
         ])
         self.figura("flujo", fg.flujo_paciente(DIR_FIG / "flujo.png"), "Flujo del paciente en el modelo", ancho=14.5)
-        self.p(f"El medio utilizado es una aplicación web propia que corre en el navegador y está publicada en {DEMO} (código en "
+        medio = self.p(f"El medio utilizado es una aplicación web propia que corre en el navegador y está publicada en {DEMO} (código en "
                f"{REPO}). Permite editar el escenario, ver la animación de un día y comparar el mismo día con y sin sobreturnos "
-               f"({self.F('cap_comp')}), consultar los resultados de los experimentos y explorar el modelo de la lista de espera."
-               ).paragraph_format.keep_with_next = True
+               f"({self.F('cap_comp')}), consultar los resultados de los experimentos y explorar el modelo de la lista de espera.")
+        medio.paragraph_format.keep_with_next = True   # el párrafo va entero y junto a su captura
+        medio.paragraph_format.keep_together = True
         self.figura("cap_comp", fg.recortar_captura(CAPTURAS / "09-comparacion-policonsultorio-claro.png", DIR_FIG / "cap_comp.png"),
                     "La aplicación: el mismo día sin sobreturnos (izquierda) y con sobreturnos (derecha), con los mismos pacientes")
 
@@ -448,7 +449,7 @@ class InformeEntrega(Informe):
     def resultados(self):
         d = self.d
         e = d.est
-        self.h1("4. Resultados")
+        self.h1("4. Resultados", salto=False)  # empieza a continuación: evita una página casi vacía al final de 3.6
         self.p(f"El estudio simuló los tres escenarios con las cuatro políticas y k = 0 a 6 sobreturnos por profesional, con números "
                f"aleatorios comunes y entre {ent(min(x['curva']['R'] for x in e['e1']))} y {ent(max(x['curva']['R'] for x in e['e1']))} días "
                f"por configuración (se duplicaron los días donde las diferencias entre k vecinos eran poco precisas). La "
