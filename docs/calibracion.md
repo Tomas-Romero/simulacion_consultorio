@@ -494,4 +494,5 @@ mismo paso cambiaron también la regla de cupos y los presets.
 4. **c_extra = 1,5 × c_ocio es una convención, no un dato.** El #4 informa la sensibilidad de k\* al
    factor (1 a 2).
 
-Los presets quedan **congelados** desde este paso (ver `CLAUDE.md`).
+Los presets quedan **congelados** desde este paso: no se recalibran ni se ajustan para mejorar los
+resultados de los pasos siguientes.

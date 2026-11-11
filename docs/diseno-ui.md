@@ -1,7 +1,7 @@
 # Diseño de la interfaz (paso #3)
 
 > Documento de diseño escrito antes de programar la interfaz. La identidad visual viene fijada
-> por el proyecto (TARC Tech en contexto médico, ver `CLAUDE.md`); acá se decide cómo se aplica.
+> por el proyecto (TARC Tech en contexto médico); acá se decide cómo se aplica.
 > La interacción toma como referencia los visualizadores de la playa de combustibles de
 > Investigación Operativa (canvas animado, panel de indicadores, línea de tiempo, comparación
 > sincronizada). De esos visualizadores se toma la interacción, no los colores.

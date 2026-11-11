@@ -7,6 +7,7 @@ coverage/
 
 # Configuración local de herramientas
 .claude/
+/CLAUDE.md
 
 # Referencias locales (visualizadores de otra materia; no se publican)
 referencias/
