@@ -3,7 +3,7 @@ sobre el sitio publicado, hoja de cifras clave, preguntas probables y plan B. La
 resultados que el informe (datos_informe.Datos)."""
 
 import docx_utils as u
-from datos_informe import DEMO, NOMBRE_POL, NOMBRE_POL_M, NOMBRE_PRESET_M, PRESETS, RAIZ, REPO, Datos, cient, ent, f, pct, pesos
+from datos_informe import DEMO, NOMBRE_POL, NOMBRE_POL_M, NOMBRE_PRESET_M, PRESETS, RAIZ, REPO, Datos, cient, cifras_recomendacion, ent, f, pct, pesos
 
 SALIDA = RAIZ / "informe" / "Guion_Defensa_Romero.docx"
 PLANTILLA = RAIZ.parent / "Capitulo 4 - Practica TP3" / "TP4_Romero Tomas_Caminante_al_Azar.docx"
@@ -23,9 +23,10 @@ def generar(d: Datos):
         return u.parrafo(doc, texto, **kw)
 
     g = {x: d.ganadora(x) for x in PRESETS}
-    k = {x: d.pol_e2(x, g[x])["kRec"] for x in PRESETS}
-    b = {x: d.pol_e2(x, g[x])["B"] for x in PRESETS}
-    b0 = {x: d.punto(d.e1(x, g[x]), 0)["B"]["media"] for x in PRESETS}
+    cr = cifras_recomendacion(d)
+    k = {x: cr[x]["k"] for x in PRESETS}
+    b = {x: {"media": cr[x]["brec"], "semi": cr[x]["brecSemi"]} for x in PRESETS}
+    b0 = {x: cr[x]["b0"] for x in PRESETS}
     din = d.din
     base = next(s for s in din["sensibilidad"] if s["esBase"])
     fl = {c["k"]: c for c in d.comp["fluido"]}
@@ -89,10 +90,13 @@ def generar(d: Datos):
         ["Mutación", f"{sum(m['fallan'] > 0 for m in mut['mutantes'])} de {len(mut['mutantes'])} mutantes detectados (el otro es equivalente)"],
         ["Tests", f"{d.tests['total']} tests, todos pasan"],
         ["Calibración", "utilización " + " / ".join(pct(c["utilizacion"]) for c in cal.values()) + "; abandono " + " / ".join(pct(c["abandono"]) for c in cal.values()) + " (meta < 5 %: limitación)"],
-        ["Estudio", f"{ent(d.est['R0'])} días por configuración, semilla {d.est['semilla']}, Bonferroni; huella {d.est['huella']}"],
+        ["Estudio", f"entre {ent(min(x['curva']['R'] for x in d.est['e1']))} y {ent(max(x['curva']['R'] for x in d.est['e1']))} días por configuración (R duplicado en el centro), semilla {d.est['semilla']}, Bonferroni; huella {d.est['huella']}"],
     ]
     for x in PRESETS:
-        cifras.append([f"Recomendación: {NOMBRE_PRESET_M[x].lower()}", f"{k[x]} {NOMBRE_POL[g[x]]}: B = {pesos(b[x]['media'])} ± {f(b[x]['semi'], 0)} (sin sobreturnos {pesos(b0[x])})"])
+        c = cr[x]
+        cifras.append([f"Recomendación: {NOMBRE_PRESET_M[x].lower()}",
+                       f"{k[x]} {NOMBRE_POL[g[x]]}: {pesos(b0[x])} → {pesos(b[x]['media'])} por día; ganancia pareada +{pesos(c['ganancia'])} "
+                       f"[{pesos(c['gananciaInf'])}; {pesos(c['gananciaSup'])}] (serie E1, R = {ent(c['R'])})"])
     cifras += [
         ["Regla ingenua round(p̄·N̄)", f"acierta {ri['dentro']} de {ri['total']}; pérdida media {pesos(ri['perdidaMedia'])}/día; no generaliza dejando un escenario afuera"],
         ["Modelo fluido", f"subestima la espera × {f(fl[0]['desEspera']['media'] / fl[0]['fluidoEspera'], 1)} (k = 0) y × {f(fl[2]['desEspera']['media'] / fl[2]['fluidoEspera'], 1)} (k = 2)"],
@@ -121,9 +125,9 @@ def generar(d: Datos):
         ("¿Por qué el costo de la hora extra es 1,5 veces el del ocio?",
          "Por coherencia: un minuto fuera de hora no puede costar menos que uno del turno normal. 1,5 es una convención; el estudio informa la sensibilidad entre 1 y 2 y el k no sube con la hora extra más cara."),
         ("¿Cómo eligieron R?",
-         f"R inicial de {ent(d.est['R0'])} días y una regla de precisión: duplicar R en la serie mientras el semiancho de las diferencias alrededor del mejor supere {pesos(d.est['umbral'])}. E6 confirma la ley 1/√R (pendiente {f(d.est['e6']['pendiente'], 3)})."),
+         f"R inicial de {ent(d.est['R0'])} días y una regla de precisión: duplicar R en la serie mientras el semiancho de las diferencias alrededor del mejor supere {pesos(d.est['umbral'])}. Se duplicó en {sum(x['curva']['R'] > d.est['R0'] for x in d.est['e1'])} series del centro, que llegaron a {ent(max(x['curva']['R'] for x in d.est['e1']))} días. E6 confirma la ley 1/√R (pendiente {f(d.est['e6']['pendiente'], 3)})."),
         ("¿Por qué no hay calentamiento?",
-         "El modelo es terminante: cada réplica es un día que empieza vacío, como el real. El transitorio de la mañana es parte de lo que se mide. Welch se usó solo en la validación M/M/c, que es estacionaria."),
+         "Porque es una simulación TERMINANTE: la jornada empieza con el consultorio vacío a las 08:00 y termina vacía cuando se va el último paciente o médico. No hay un régimen estacionario que estimar: el transitorio de la mañana es parte de lo que se quiere medir, y cada réplica es un día completo. Distinto es la validación M/M/c, que compara con fórmulas de régimen estacionario: ahí sí se descartó un período de calentamiento, justificado con el método de Welch."),
         ("¿Cómo saben que el código hace lo que dicen?",
          f"Casos con solución exacta, casos límite, conservación de pacientes, Little en cada réplica y {d.tests['total']} tests. Además una prueba de mutación: se rompieron reglas a propósito y los tests lo detectaron en {sum(m['fallan'] > 0 for m in mut['mutantes'])} de {len(mut['mutantes'])} casos; el otro mutante no cambia el comportamiento."),
         ("¿La calibración no es ajustar los datos hasta que dé lo que quieren?",

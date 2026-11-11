@@ -43,14 +43,15 @@ Más capturas, en claro y en oscuro, en [`docs/capturas/`](docs/capturas/LEEME.m
 
 ## Qué responde
 
-Con los tres escenarios de ejemplo (datos ficticios, marcados como supuestos) y 2.000 días
-simulados por configuración:
+Con los tres escenarios de ejemplo (datos ficticios, marcados como supuestos) y entre 2.000 y 4.000 días
+simulados por configuración (la regla de precisión duplicó R en el centro). Las cifras son de la serie de la política
+ganadora, con los mismos días para k = 0 y para el k recomendado; la ganancia es la diferencia pareada día a día:
 
-| Escenario | Política ganadora | Sobreturnos por profesional | B por día (IC 95 %) | Sin sobreturnos |
-|---|---|---|---|---|
-| Consultorio chico (1 médico) | donde más se falta | 3 | $ 587.710 ± 3.939 | $ 566.865 |
-| Policonsultorio (3 profesionales) | donde más se falta | 2 | $ 1.545.042 ± 6.636 | $ 1.506.368 |
-| Centro completo (6 profesionales) | al inicio del turno | 1 | $ 2.503.380 ± 8.577 | $ 2.463.214 |
+| Escenario | Política ganadora | Sobreturnos por profesional | B por día (IC 95 %) | Sin sobreturnos | Ganancia por día (IC 95 %) | Días |
+|---|---|---|---|---|---|---|
+| Consultorio chico (1 médico) | donde más se falta | 3 | $ 587.710 ± 3.939 | $ 566.865 | +$ 20.845 [$ 18.316; $ 23.375] | 2.000 |
+| Policonsultorio (3 profesionales) | donde más se falta | 2 | $ 1.545.042 ± 6.636 | $ 1.506.368 | +$ 38.674 [$ 35.169; $ 42.178] | 2.000 |
+| Centro completo (6 profesionales) | al inicio del turno | 1 | $ 2.507.454 ± 6.193 | $ 2.467.665 | +$ 39.789 [$ 37.691; $ 41.887] | 4.000 |
 
 - No hay una regla universal: reponer exactamente a los que se espera que falten
   (k = p̄·N̄) acierta donde los cupos cubren la demanda espontánea y falla en el centro. La

@@ -232,6 +232,64 @@ class Datos:
 
 
 # ==========================================
+# Cifras de la recomendación (las que citan Resumen, Cap. 5, 9.1, guion y README)
+# ==========================================
+def cifras_recomendacion(d: "Datos") -> dict:
+    """Por escenario: política ganadora (E2) y, de SU serie E1 (un solo R), el k recomendado, B sin sobreturnos, B en el k
+    recomendado y la ganancia como diferencia pareada día a día contra k = 0, con su IC 95 %. No se restan medias de corridas
+    con distinto R: E2 compara políticas con el R común a las cuatro series, que en el centro es menor que el de E1."""
+    out = {}
+    for p in PRESETS:
+        pol = d.ganadora(p)
+        serie = d.e1(p, pol)
+        k = serie["kRec"]
+        b0, brec = d.punto(serie, 0)["B"], d.punto(serie, k)["B"]
+        dB = d.contra_cero(serie, k)
+        out[p] = {"politica": pol, "k": k, "R": serie["R"], "b0": b0["media"], "brec": brec["media"], "brecSemi": brec["semi"],
+                  "ganancia": dB["media"], "gananciaInf": dB["inf"], "gananciaSup": dB["sup"]}
+    return out
+
+
+def verificar_cifras_recomendacion(d: "Datos", citas: dict, readme: str | None = None) -> list[str]:
+    """Cada par «sin sobreturnos → recomendado» citado tiene que salir de la MISMA serie E1 (política ganadora, mismo R), y la
+    ganancia tiene que ser la diferencia pareada de E1 contra k = 0, con su IC. Devuelve la lista de fallas."""
+    fallas = []
+    cerca = lambda a, b: a is not None and b is not None and abs(a - b) < 0.5  # noqa: E731
+    for p in PRESETS:
+        serie = d.e1(p, d.ganadora(p))
+        kr = serie["kRec"]
+        b0, br = d.punto(serie, 0)["B"], d.punto(serie, kr)["B"]
+        dB = d.contra_cero(serie, kr)
+        c = citas[p]
+        if c["k"] != kr or c["R"] != serie["R"]:
+            fallas.append(f"{p}: k o R citados ({c['k']}, {c['R']}) no son los de la serie E1 ({kr}, {serie['R']})")
+        if not (cerca(c["b0"], b0["media"]) and cerca(c["brec"], br["media"]) and cerca(c["brecSemi"], br["semi"])):
+            fallas.append(f"{p}: B(0) = {c['b0']:.0f} y B(rec) = {c['brec']:.0f} citados no son los de la serie E1 "
+                          f"(B(0) = {b0['media']:.0f}, B(k={kr}) = {br['media']:.0f}, R = {serie['R']})")
+        if not (cerca(c["ganancia"], dB["media"]) and cerca(c["gananciaInf"], dB["inf"]) and cerca(c["gananciaSup"], dB["sup"])):
+            fallas.append(f"{p}: la ganancia citada ({c['ganancia']:.0f}) no es la ΔB pareada de E1 ({dB['media']:.0f} "
+                          f"[{dB['inf']:.0f}; {dB['sup']:.0f}])")
+        if abs((br["media"] - b0["media"]) - dB["media"]) > 0.5:
+            fallas.append(f"{p}: en E1, B(rec) − B(0) no coincide con la diferencia pareada (¿series con distinto R?)")
+    if readme is not None:
+        fila = {"chico": "Consultorio chico", "policonsultorio": "Policonsultorio", "centro": "Centro completo"}
+        for p in PRESETS:
+            linea = next((l for l in readme.splitlines() if l.startswith(f"| {fila[p]}")), None)
+            if linea is None:
+                fallas.append(f"README: no está la fila de {fila[p]}")
+                continue
+            # Orden de la fila: B(rec) ± semi | B(0) | ΔB [inf; sup] | R
+            nums = [round(float(x.replace(".", ""))) for x in re.findall(r"\$ ([\d.]+)", linea)]
+            serie = d.e1(p, d.ganadora(p))
+            kr = serie["kRec"]
+            dB = d.contra_cero(serie, kr)
+            esperado = [round(x) for x in (d.punto(serie, kr)["B"]["media"], d.punto(serie, 0)["B"]["media"], dB["media"], dB["inf"], dB["sup"])]
+            if nums != esperado:
+                fallas.append(f"README, {fila[p]}: cifras {nums} no son las de la serie E1 (B(rec), B(0), ΔB, inf, sup = {esperado})")
+    return fallas
+
+
+# ==========================================
 # Verificación de la narrativa
 # ==========================================
 def verificar_narrativa(d: Datos):
@@ -272,6 +330,10 @@ def verificar_narrativa(d: Datos):
         "E2: ganadoras (donde más se falta, donde más se falta, al inicio)":
             [d.ganadora(p) for p in PRESETS] == ["mayor_ausentismo", "mayor_ausentismo", "inicio"],
         "E2: sin empates declarados": all(not d.e2(p)["empatadas"] for p in PRESETS),
+        "E1: la regla de precisión duplicó R solo en series del centro":
+            {x["preset"] for x in d.est["e1"] if x["curva"]["R"] > d.est["R0"]} == {"centro"},
+        "E1: R entre R0 y 2·R0": min(x["curva"]["R"] for x in d.est["e1"]) == d.est["R0"] and max(x["curva"]["R"] for x in d.est["e1"]) == 2 * d.est["R0"],
+        "E1: el k recomendado de la serie E1 coincide con el de E2": all(d.e1(p, d.ganadora(p))["kRec"] == d.pol_e2(p, d.ganadora(p))["kRec"] for p in PRESETS),
         "E1: k recomendado de la ganadora 3, 2, 1": [d.pol_e2(p, d.ganadora(p))["kRec"] for p in PRESETS] == [3, 2, 1],
         "E1: B(k_rec) − B(0) > 0 significativo en la ganadora de cada preset":
             all(d.contra_cero(d.e1(p, d.ganadora(p)), d.pol_e2(p, d.ganadora(p))["kRec"])["inf"] > 0 for p in PRESETS),
@@ -345,6 +407,8 @@ def verificar_narrativa(d: Datos):
             d.navegador["decisionesIguales"] == d.navegador["decisiones"] and not d.navegador["huellaIgual"],
     }
     fallas = [nombre for nombre, ok in condiciones.items() if not ok]
+    # Pares «sin sobreturnos → recomendado»: misma serie E1, mismo R, ganancia = ΔB pareada (texto, guion y README).
+    fallas += verificar_cifras_recomendacion(d, cifras_recomendacion(d), (RAIZ / "README.md").read_text(encoding="utf-8"))
     if fallas:
         raise AssertionError("El texto del informe ya no coincide con los resultados: " + "; ".join(fallas))
-    return len(condiciones)
+    return len(condiciones) + 1

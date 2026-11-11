@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import docx_utils as u  # noqa: E402
 import figuras as fg  # noqa: E402
 from datos_informe import (CAPTURAS, DEMO, NOMBRE_POL, NOMBRE_POL_M, NOMBRE_PRESET, NOMBRE_PRESET_M, POLITICAS, PRESETS,  # noqa: E402
-                           RAIZ, REPO, Datos, cient, conjunto, ent, f, ic, icp, pct, pesos, verificar_narrativa)
+                           RAIZ, REPO, Datos, cient, cifras_recomendacion, conjunto, ent, f, ic, icp, pct, pesos, verificar_narrativa)
 
 PLANTILLA = RAIZ.parent / "Capitulo 4 - Practica TP3" / "TP4_Romero Tomas_Caminante_al_Azar.docx"
 SALIDA = RAIZ / "informe" / "Proyecto_Integrador_Simulacion_Romero.docx"
@@ -24,12 +24,17 @@ TEXTOS = RAIZ / "informe" / "textos_respuesta.md"
 
 FIGURAS = ["flujo", "e1", "e3", "e4", "e56", "mec", "fluido", "ds_diagramas", "lista", "tornado", "conv", "ajuste", "logit",
            "cap_inicio", "cap_sim", "cap_comp", "cap_datos"]
-TABLAS = ["entrada", "costos", "mmc", "modelo_val", "mutacion", "metas", "cal_hist", "cal_vigente", "diseno", "e1", "e2",
+TABLAS = ["entrada", "costos", "mmc", "modelo_val", "mutacion", "metas", "cal_hist", "cal_vigente", "diseno", "e1", "e2", "recomendacion",
           "e3_costos", "e4", "mec", "loo", "fluido", "ds_param", "ds_eq", "ds_pol", "ds_sens", "ds_conv", "aj_grupo", "aj_recup",
           "aj_aplic", "logit", "arquitectura", "supuestos", "supuestos_ds", "presets", "tests"]
 ESPECIALIDAD = {"clinica": "Clínica médica", "pediatria": "Pediatría", "cardiologia": "Cardiología", "traumatologia": "Traumatología",
                 "ginecologia": "Ginecología", "dermatologia": "Dermatología"}
 TIPO = {"primera_vez": "primera vez", "control": "control", "espontaneo": "espontáneo", "urgencia": "urgencia"}
+
+
+def gan(c: dict) -> str:
+    """Ganancia pareada de E1 contra k = 0 con su IC 95 %: «+$ 39.789 [$ 37.691; $ 41.887]»."""
+    return f"+{pesos(c['ganancia'])} {icp(c['gananciaInf'], c['gananciaSup'])}"
 
 
 class Informe:
@@ -102,9 +107,10 @@ class Informe:
     def resumen(self):
         d = self.d
         g = {p: d.ganadora(p) for p in PRESETS}
-        k = {p: d.pol_e2(p, g[p])["kRec"] for p in PRESETS}
-        b = {p: d.pol_e2(p, g[p])["B"] for p in PRESETS}
-        b0 = {p: d.punto(d.e1(p, g[p]), 0)["B"]["media"] for p in PRESETS}
+        c = cifras_recomendacion(d)
+        k = {p: c[p]["k"] for p in PRESETS}
+        b = {p: {"media": c[p]["brec"], "semi": c[p]["brecSemi"]} for p in PRESETS}
+        b0 = {p: c[p]["b0"] for p in PRESETS}
         din = d.din
         base = next(s for s in din["sensibilidad"] if s["esBase"])
         dentro, total, _ = d.recuperacion()
@@ -120,12 +126,14 @@ class Informe:
             f"escenarios ficticios (un consultorio de un médico, un policonsultorio de tres profesionales y un centro de "
             f"seis) se calibraron contra metas fijadas de antemano en tres iteraciones; cuatro de las cinco metas se "
             f"cumplen y el abandono de la demanda espontánea queda como limitación documentada.",
-            f"Con {ent(d.est['R0'])} días simulados por configuración, números aleatorios comunes y selección del mejor "
-            f"con Bonferroni, la recomendación es **{k['chico']} sobreturnos {NOMBRE_POL[g['chico']]}** en el consultorio "
+            f"Con entre {ent(min(x['curva']['R'] for x in d.est['e1']))} y {ent(max(x['curva']['R'] for x in d.est['e1']))} días "
+            f"simulados por configuración (la regla de precisión duplicó R en el centro), números aleatorios comunes y selección del "
+            f"mejor con Bonferroni, la recomendación es **{k['chico']} sobreturnos {NOMBRE_POL[g['chico']]}** en el consultorio "
             f"chico, **{k['policonsultorio']} {NOMBRE_POL[g['policonsultorio']]}** en el policonsultorio y "
-            f"**{k['centro']} {NOMBRE_POL[g['centro']]}** del turno en el centro. Frente a no dar sobreturnos, el beneficio "
-            f"medio por día sube de {pesos(b0['chico'])} a {pesos(b['chico']['media'])}, de {pesos(b0['policonsultorio'])} "
-            f"a {pesos(b['policonsultorio']['media'])} y de {pesos(b0['centro'])} a {pesos(b['centro']['media'])}. La política "
+            f"**{k['centro']} {NOMBRE_POL[g['centro']]}** del turno en el centro. Frente a no dar sobreturnos, con los mismos días, "
+            f"el beneficio medio por día sube de {pesos(b0['chico'])} a {pesos(b['chico']['media'])} "
+            f"({gan(c['chico'])}), de {pesos(b0['policonsultorio'])} a {pesos(b['policonsultorio']['media'])} "
+            f"({gan(c['policonsultorio'])}) y de {pesos(b0['centro'])} a {pesos(b['centro']['media'])} ({gan(c['centro'])}). La política "
             f"importa tanto como la cantidad: poner los sobreturnos al final de la agenda nunca conviene. Ninguna regla "
             f"simple del tipo «reponer a los que se espera que falten» generaliza a los tres escenarios cuando se la valida "
             f"dejando un escenario afuera: cada consultorio se tiene que simular.",
@@ -606,6 +614,18 @@ class Informe:
                f"**{NOMBRE_POL[d.ganadora('centro')]}** en el centro. Las comparaciones pareadas entre los seis pares de políticas de "
                f"cada escenario (Bonferroni, 18 en total) declaran distinguibles {pares_sig}; no hay empates en el primer puesto. "
                f"La Sección 5.6 explica por qué cambia la ganadora entre escenarios.")
+        cr = cifras_recomendacion(d)
+        rc = d.e2("centro")["Rcomun"]
+        self.p(f"Para comparar políticas entre sí, la {self.T('e2')} usa el R común a las cuatro series de cada escenario, así el pareo "
+               f"es completo; en el centro ese R ({ent(rc)} días) es menor que el de su serie ganadora en E1 ({ent(cr['centro']['R'])}), "
+               f"porque la regla de precisión duplicó esa serie. La **recomendación** y su ganancia frente a no dar sobreturnos se toman, "
+               f"en cambio, de la serie E1 de la política ganadora, con un único R: B(0) y B(k recomendado) salen de los mismos días y la "
+               f"ganancia es su diferencia pareada día a día, con su intervalo de confianza ({self.T('recomendacion')}).")
+        self.tabla("recomendacion", "Recomendación por escenario: serie E1 de la política ganadora (B por día; ganancia = diferencia pareada contra k = 0, IC 95 %)",
+                   ["Escenario", "Política", "k rec.", "R", "B sin sobreturnos", "B recomendado", "Ganancia por día (IC 95 %)"],
+                   [[NOMBRE_PRESET_M[p], NOMBRE_POL_M[cr[p]["politica"]], str(cr[p]["k"]), ent(cr[p]["R"]), pesos(cr[p]["b0"]),
+                     f"{pesos(cr[p]['brec'])} ± {f(cr[p]['brecSemi'], 0)}", gan(cr[p])] for p in PRESETS],
+                   anchos=[2.4, 2.3, 1.0, 1.0, 2.2, 2.9, 5.2], tam=8)
         self.h2("5.4 E3: sensibilidad al ausentismo y a los costos")
         self.p(f"La {self.F('e3')} muestra, para el policonsultorio con su política ganadora, cómo cambia el k recomendado con el "
                f"ausentismo medio (variando β₀ con β₁ fijo, lo que preserva los números aleatorios comunes: con más ausentismo "
@@ -981,9 +1001,10 @@ class Informe:
         d = self.d
         din = d.din
         g = {p: d.ganadora(p) for p in PRESETS}
-        k = {p: d.pol_e2(p, g[p])["kRec"] for p in PRESETS}
-        b = {p: d.pol_e2(p, g[p])["B"]["media"] for p in PRESETS}
-        b0 = {p: d.punto(d.e1(p, g[p]), 0)["B"]["media"] for p in PRESETS}
+        c = cifras_recomendacion(d)
+        k = {p: c[p]["k"] for p in PRESETS}
+        b = {p: c[p]["brec"] for p in PRESETS}
+        b0 = {p: c[p]["b0"] for p in PRESETS}
         e3 = d.est["e3"]["ausentismo"]
         base = next(s for s in din["sensibilidad"] if s["esBase"])
         fl = d.comp["fluido"]
@@ -1008,10 +1029,10 @@ class Informe:
           f"iteraciones; cuatro de cinco metas se cumplen y el abandono queda como limitación documentada.")
         P(f"**Cuántos sobreturnos y dónde.** Con números aleatorios comunes y selección del mejor con Bonferroni, la recomendación es "
           f"{k['chico']} sobreturnos por día {NOMBRE_POL[g['chico']]} en el consultorio chico, {k['policonsultorio']} "
-          f"{NOMBRE_POL[g['policonsultorio']]} en el policonsultorio y {k['centro']} {NOMBRE_POL[g['centro']]} del turno en el centro, con "
-          f"ganancias de {pesos(b['chico'] - b0['chico'])}, {pesos(b['policonsultorio'] - b0['policonsultorio'])} y "
-          f"{pesos(b['centro'] - b0['centro'])} por día frente a no dar sobreturnos. La ubicación importa: al final de la agenda nunca "
-          f"conviene, y el mejor lugar depende de cuántos se den.")
+          f"{NOMBRE_POL[g['policonsultorio']]} en el policonsultorio y {k['centro']} {NOMBRE_POL[g['centro']]} del turno en el centro. "
+          f"Frente a no dar sobreturnos, la ganancia por día, medida como diferencia pareada sobre los mismos días, es de "
+          f"{gan(c['chico'])}, {gan(c['policonsultorio'])} y {gan(c['centro'])} respectivamente. La ubicación importa: al final de la "
+          f"agenda nunca conviene, y el mejor lugar depende de cuántos se den.")
         P("**Mecanismo y regla práctica.** La apertura de cada turno tiene un ocio estructural que absorbe un sobreturno: con uno conviene "
           "ponerlo al inicio, con dos o más el segundo ya forma cola y conviene repartirlos donde más se falta. Ninguna regla del tipo "
           "«reponer a los que se espera que falten», ni siquiera corregida por la demanda espontánea, generaliza a los tres escenarios "
@@ -1144,8 +1165,40 @@ class Informe:
         print(f"  [informe] {SALIDA.relative_to(RAIZ)} ({self.fig} figuras, {self.tab} tablas)")
 
 
+def actualizar_readme(d: Datos):
+    """Reescribe en README.md el párrafo y la tabla de «Qué responde» con las cifras de la serie E1 (las mismas que el informe)."""
+    ruta = RAIZ / "README.md"
+    texto = ruta.read_text(encoding="utf-8")
+    nl = "\r\n" if "\r\n" in texto else "\n"
+    lineas = texto.split(nl)
+    i = lineas.index("## Qué responde") + 2
+    j = i
+    while not lineas[j].startswith("| Centro completo"):
+        j += 1
+    cr = cifras_recomendacion(d)
+    rmin, rmax = min(x["curva"]["R"] for x in d.est["e1"]), max(x["curva"]["R"] for x in d.est["e1"])
+    nombres = {"chico": "Consultorio chico (1 médico)", "policonsultorio": "Policonsultorio (3 profesionales)", "centro": "Centro completo (6 profesionales)"}
+    pol = {"mayor_ausentismo": "donde más se falta", "inicio": "al inicio del turno", "intercalado": "intercalados", "final": "al final"}
+    nuevo = [f"Con los tres escenarios de ejemplo (datos ficticios, marcados como supuestos) y entre {ent(rmin)} y {ent(rmax)} días",
+             "simulados por configuración (la regla de precisión duplicó R en el centro). Las cifras son de la serie de la política",
+             "ganadora, con los mismos días para k = 0 y para el k recomendado; la ganancia es la diferencia pareada día a día:",
+             "",
+             "| Escenario | Política ganadora | Sobreturnos por profesional | B por día (IC 95 %) | Sin sobreturnos | Ganancia por día (IC 95 %) | Días |",
+             "|---|---|---|---|---|---|---|"]
+    for p in PRESETS:
+        c = cr[p]
+        nuevo.append(f"| {nombres[p]} | {pol[c['politica']]} | {c['k']} | {pesos(c['brec'])} ± {f(c['brecSemi'], 0)} | {pesos(c['b0'])} | "
+                     f"+{pesos(c['ganancia'])} [{pesos(c['gananciaInf'])}; {pesos(c['gananciaSup'])}] | {ent(c['R'])} |")
+    lineas[i:j + 1] = nuevo
+    ruta.write_text(nl.join(lineas), encoding="utf-8")
+    print("  [readme]  tabla de «Qué responde» actualizada desde la serie E1")
+
+
 def main():
     d = Datos()
+    if "--readme" in sys.argv:
+        actualizar_readme(d)
+        return
     n = verificar_narrativa(d)
     print(f"  [verificación] {n} afirmaciones del texto respaldadas por los resultados")
     Informe(d).construir()
