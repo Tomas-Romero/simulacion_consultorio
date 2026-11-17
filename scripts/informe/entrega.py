@@ -79,10 +79,12 @@ class InformeEntrega(Informe):
     # ------------------------------------------------------------------ 2
     def solucion(self):
         self.h1("2. Solución y medio utilizado")
-        self.p("Se simula un día de atención, de 08:00 a 20:00, minuto a minuto. Los pacientes con turno pueden faltar o llegar "
+        self.p("Se simula un día de atención, de 08:00 a 20:00, como una simulación de eventos discretos: el reloj salta de un evento "
+               "al siguiente (una llegada, el inicio o el fin de una consulta, un abandono). Los pacientes con turno pueden faltar o llegar "
                "tarde; los pacientes sin turno (espontáneos) llegan durante el día y se van si esperan demasiado; todos pasan por la "
                "admisión y luego por la sala de espera, y cada médico, al quedar libre, elige al siguiente con un orden de prioridad "
-               f"fijo. La {self.F('flujo')} muestra el recorrido.")
+               f"fijo. Una parte de los intervalos de cada agenda queda reservada como cupo para los pacientes sin turno (Anexo). La "
+               f"{self.F('flujo')} muestra el recorrido.")
         self.p("La solución combina tres herramientas de la materia:")
         self.lista([
             "**Simulación de eventos discretos con Monte Carlo** (Cap. 1 a 3): el modelo del día se repite miles de veces con "
@@ -148,8 +150,8 @@ class InformeEntrega(Informe):
         self.tabla("calibracion", "Metas fijadas de antemano y situación lograda sin sobreturnos", ["Indicador", "Meta"] + nombres, filas,
                    anchos=[4.4, 2.4, 3, 3, 3])
         self.p("Cuatro de las cinco metas se cumplen. El abandono de los pacientes sin turno queda por encima de la meta: con la agenda "
-               "llena, el espontáneo solo entra en los huecos que dejan los ausentes, y su espera depende de cada cuánto aparece un "
-               "hueco. Se dejó documentado como limitación; los abandonos se cuentan como pacientes perdidos en B.")
+               "llena, el espontáneo solo entra en los cupos reservados y en los huecos que dejan los ausentes, y su espera depende de "
+               "cada cuánto aparece uno de esos lugares. Se dejó documentado como limitación; los abandonos se cuentan como pacientes perdidos en B.")
 
     def aleatorios(self):
         r = self.r["transformada"]
@@ -165,7 +167,7 @@ class InformeEntrega(Informe):
                f"1 y coeficiente de variación cv = {f(r['cv'], 1)}. Para una lognormal de media m y coeficiente cv:")
         self.ec(f"σ² = ln(1 + cv²) = ln(1 + {f(r['cv'], 1)}²) = {f(r['s2'], 4)},   σ = {f(r['sigma'], 4)}")
         self.ec(f"μ = ln(m) − σ²/2 = ln(1) − {f(r['s2'] / 2, 4)} = {f(r['mu'], 4)}")
-        self.p(f"El generador entregó u = {f(r['u']['atencion'], 4)}. Con la inversa de la normal estándar, z = Φ⁻¹({f(r['u']['atencion'], 4)}) = "
+        self.p(f"El generador entregó u = {f(r['u']['atencion'], 5)}. Con la inversa de la normal estándar, z = Φ⁻¹({f(r['u']['atencion'], 5)}) = "
                f"{f(r['z'], 4)}, y")
         self.ec(f"factor = e^{{μ + σ·z}} = e^{{{f(r['mu'], 4)} + {f(r['sigma'], 4)} · ({f(r['z'], 4)})}} = {f(r['factor'], 4)}")
         self.p(f"Para un control (factor de clase {f(r['factorControl'], 1)}) con D = {r['D']} min, la consulta dura "
@@ -204,14 +206,14 @@ class InformeEntrega(Informe):
                f"solo si u₂ < λ(t)/λ*. La {self.T('thinning')} muestra los primeros seis candidatos de un día.")
         self.tabla("thinning", f"Adelgazamiento: primeros candidatos (λ* = {f(th['lmaxHora'], 1)} por hora)",
                    ["Candidato", "u₁", "Salto [min]", "Hora", "λ(t) [por hora]", "λ(t)/λ*", "u₂", "¿Se acepta?"],
-                   [[str(i + 1), f(x["u1"], 3), f(x["salto"], 1), hhmm(x["t"]), f(60 * x["lambda"], 1), f(x["cociente"], 2), f(x["u2"], 3),
+                   [[str(i + 1), f(x["u1"], 4), f(x["salto"], 1), hhmm(x["t"]), f(60 * x["lambda"], 1), f(x["cociente"], 2), f(x["u2"], 4),
                      "sí" if x["acepta"] else "no"] for i, x in enumerate(th["candidatos"])],
                    anchos=[1.8, 1.4, 1.8, 1.4, 2.2, 1.6, 1.4, 1.8])
         acept = sum(x["acepta"] for x in th["candidatos"])
         rech = next(i for i, x in enumerate(th["candidatos"]) if not x["acepta"])
         cr = th["candidatos"][rech]
         self.p(f"El candidato {rech + 1} se rechaza porque llega en un horario de menor demanda (λ(t)/λ* = {f(cr['cociente'], 2)}) y su "
-               f"u₂ = {f(cr['u2'], 3)} es mayor. De los seis candidatos se aceptan {acept}. En el día completo se esperan Σλ = "
+               f"u₂ = {f(cr['u2'], 4)} es mayor. De los seis candidatos se aceptan {acept}. En el día completo se esperan Σλ = "
                f"{f(th['esperado'], 1)} llegadas; en este día llegaron {th['totalMotor']}.")
         b = self.r["bondad"]
         self.h3("Bondad de ajuste: Kolmogorov-Smirnov y χ²")
@@ -396,7 +398,7 @@ class InformeEntrega(Informe):
         self.lista([
             "Capacidad: C = n · (N̄ + k) · dh / 7  [turnos/día], con n profesionales, N̄ turnos por profesional, k sobreturnos y dh días "
             "hábiles por semana.",
-            "Anticipación (Ley de Little: tiempo de permanencia = stock / tasa de salida): a = L / C  [días].",
+            "Anticipación (Ley de Little: tiempo de permanencia = stock / tasa de salida; con la agenda llena la salida es C): a = L / C  [días].",
             "Turnos que se dan: S = mín(C, L/τ)  [turnos/día], con τ = 1 día de anticipación mínima.",
             "Stock: dL/dt = D·(1 − d(a)) + r·p(a)·S − S  [pacientes/día], donde D es la demanda, d(a) el desaliento, p(a) el ausentismo "
             "y r la fracción de ausentes que vuelve a pedir turno.",
@@ -426,7 +428,8 @@ class InformeEntrega(Informe):
         eq0 = next(x for x in din["equilibrios"] if x["k"] == 0)["eqs"][0]
         self.p(f"Un equilibrio es **estable** si, al alejarse un poco, el sistema vuelve: con dL/dt = g(a), hace falta g′(a*) < 0. Con el "
                f"desaliento desde los {f(des['umbral'], 0)} días, g′ = {f(eq0['pendiente'], 2)} y el equilibrio es único y estable. Si el "
-               f"desaliento empezara recién a los {bi['umbral']} días, entre 1 y {bi['umbral']} días solo actuaría el bucle de refuerzo R1 y "
+               f"desaliento empezara recién a los {bi['umbral']} días (recalculando D₀ para que {f(ds['amedia'], 2)} días siga siendo un equilibrio), "
+               f"entre 1 y {bi['umbral']} días solo actuaría el bucle de refuerzo R1 y "
                f"aparecerían tres equilibrios ({self.T('equilibrios')}): el del consultorio de hoy sería inestable, y el sistema se iría a "
                f"una lista casi vacía o a una lista larga (**biestabilidad**). Como el estado observado tiene que ser estable, se usó el "
                f"umbral de {f(des['umbral'], 0)} días.")
@@ -484,8 +487,8 @@ class InformeEntrega(Informe):
         self.p(f"**Sensibilidad.** El número recomendado crece con el ausentismo: en el policonsultorio va de "
                f"{a0['curva']['kRec']} con {pct(a0['p'], 0)} de ausentismo a {a1['curva']['kRec']} con {pct(a1['p'], 0)} ({self.F('e3')}), por "
                f"lo que el ausentismo es el dato que más conviene medir en un consultorio real. Con la hora extra más cara el k "
-               f"recomendado nunca sube, y el costo que se le asigna a la espera también mueve la decisión: con {pesos(ce[0]['cEspera'])} "
-               f"por minuto el k recomendado es {ce[0]['curva']['kRec']}, y con {pesos(ce[-1]['cEspera'])}, {ce[-1]['curva']['kRec']}.")
+               f"recomendado nunca sube, y el costo que se le asigna a la espera también mueve la decisión: el k recomendado pasa de "
+               f"{ce[0]['curva']['kRec']} con {pesos(ce[0]['cEspera'])} por minuto a {ce[-1]['curva']['kRec']} con {pesos(ce[-1]['cEspera'])}.")
         self.figura("e3", fg.sensibilidad_ausentismo(e, DIR_FIG / "e3.png"),
                     "k recomendado según el ausentismo medio (barras: conjunto de óptimos) y según ausentismo y costo de la hora extra (policonsultorio)")
         e5 = e["e5"]
@@ -497,6 +500,17 @@ class InformeEntrega(Informe):
                f"({self.T('riesgo')}); con más sobreturnos la proporción crece.")
         self.tabla("riesgo", "Policonsultorio: ganancia diaria frente a k = 0 y probabilidad de un día peor", ["k", "Ganancia media", "Mediana", "P(B(k) < B(0))"],
                    filas, anchos=[1.5, 3.5, 3.5, 3.5], resaltar_filas=(kr - 1,))
+        ing = {p_: d.loo(p_, "ingenua") for p_ in PRESETS}
+        ok_ch = ing["chico"]["aciertos"] + ing["policonsultorio"]["aciertos"]
+        tot_ch = ing["chico"]["total"] + ing["policonsultorio"]["total"]
+        corr = d.loo("centro", "alfaBeta")
+        self.p(f"**¿Alcanza una regla simple?** Se probó la regla «reponer a los que se espera que falten», k = redondeo(p̄·N̄), con "
+               f"p̄ el ausentismo medio y N̄ los turnos reservados por profesional, evaluada en cada escenario con distintos niveles de "
+               f"ausentismo. En el consultorio chico y el policonsultorio cae dentro del conjunto de óptimos en {ok_ch} de {tot_ch} casos, "
+               f"pero en el centro acierta {ing['centro']['aciertos']} de {ing['centro']['total']} y pierde en promedio "
+               f"{pesos(ing['centro']['perdida']['media'])} por día frente al óptimo. Agregando una corrección por la demanda sin turno, "
+               f"ajustada con los otros dos escenarios, en el centro sigue acertando {corr['aciertos']} de {corr['total']}: con tres "
+               f"escenarios no se puede validar una regla general, y cada consultorio se tiene que simular.")
         din = d.din
         pols = din["politicas"]
         prm = din["parametros"]
@@ -505,7 +519,7 @@ class InformeEntrega(Informe):
                f"{prm['pico']['duracion']} semanas, dar sobreturnos acorta la lista y baja el ausentismo ({self.T('ds_pol')}). Ajustar k cada "
                f"semana según el ausentismo observado nunca rinde menos que el k fijo, pero la diferencia es chica.")
         self.tabla("ds_pol", f"Tres políticas ante el pico de demanda ({prm['horizonteSemanas']} semanas)", ["Política", "Lista máxima", "Ausentismo máximo",
-                   "Perdidos en el pico", f"Beneficio en {prm['horizonteSemanas']} semanas"],
+                   "Perdidos en el pico y la recuperación", f"Beneficio en {prm['horizonteSemanas']} semanas"],
                    [[n, f(x["Lmax"], 0), pct(x["pmax"], 1), ent(x["picoPerdidos"]), pesos(x["beneficio"])] for n, x in zip(nombres, pols)],
                    anchos=[4, 2.4, 2.8, 3, 3.8])
 
@@ -564,7 +578,7 @@ class InformeEntrega(Informe):
         self.h1("Anexo. Supuestos principales y parámetros de los escenarios")
         claves = ["S1", "S2", "S5", "S7", "S8", "S9", "S10", "S11", "S14", "S15", "S26", "S32"]
         sup = [(a, b.replace(" (S25)", "")) for a, b in d.supuestos if a in claves]
-        self.tabla("supuestos", "Supuestos principales del modelo", ["N.º", "Supuesto"], [[a, b] for a, b in sup],
+        self.tabla("supuestos", "Supuestos principales del modelo (con la numeración del modelo conceptual completo)", ["N.º", "Supuesto"], [[a, b] for a, b in sup],
                    anchos=[1.2, 14.8], alinear=[u.CENTRO, u.JUSTIFICADO], tam=8.5, mantener_junta=False)
         filas = []
         for pr in d.presets:
@@ -572,7 +586,7 @@ class InformeEntrega(Informe):
                 filas.append([pr["nombre"].split(" (")[0], prof["nombre"], ESPECIALIDAD[prof["especialidad"]], "mañana" if prof["turno"] == "manana" else "tarde",
                               str(prof["D"]), f"{prof['slots']} ({prof['slotsCupo']})", f(pr["espontaneos"]["totalDia"], 1)])
         self.tabla("presets", "Profesionales de los escenarios (intervalos de agenda: total y reservados a pacientes sin turno)",
-                   ["Escenario", "Profesional", "Especialidad", "Turno", "D [min]", "Intervalos", "Espontáneos por día"], filas,
+                   ["Escenario", "Profesional", "Especialidad", "Turno", "D [min]", "Intervalos", "Espontáneos por día (escenario)"], filas,
                    anchos=[2.6, 2.8, 2.4, 1.4, 1.2, 1.8, 2.2], tam=8.5, mantener_junta=False)
 
     def construir(self):

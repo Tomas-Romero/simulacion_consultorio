@@ -214,7 +214,7 @@ def generar_entrega(d: Datos, r: dict):
     bloques = [
         ["0:00 – 1:30", "Problema", "Parte de los pacientes con turno no viene y el médico queda ocioso. El sobreturno recupera esas horas pero trae espera y horas extra. Pregunta: cuántos y dónde. Criterio: beneficio neto B por día."],
         ["1:30 – 2:30", "Solución", "Simulación de eventos discretos del día + Monte Carlo para decidir, teoría de colas para validar, dinámica de sistemas para la lista de espera. Herramienta: aplicación web propia."],
-        ["2:30 – 7:00", "Temas de la materia", f"Un cálculo por tema: transformada inversa (u = {f(tr['u']['atencion'], 4)} → consulta de {f(tr['duracion'], 2)} min); IC y diferencia pareada (semiancho {pesos(ic_['dif']['semi'])} contra {pesos(ic_['semiIndep'])} sin pareo); Bonferroni (t = {f(bo['t'], 2)}); M/M/3 a mano (Wq = {f(mm['Wq'], 2)} min) y Little; un paso de Euler y el equilibrio D₀."],
+        ["2:30 – 7:00", "Temas de la materia", f"Un cálculo por tema: transformada inversa (u = {f(tr['u']['atencion'], 5)} → consulta de {f(tr['duracion'], 2)} min); IC y diferencia pareada (semiancho {pesos(ic_['dif']['semi'])} contra {pesos(ic_['semiIndep'])} sin pareo); Bonferroni (t = {f(bo['t'], 2)}); M/M/3 a mano (Wq = {f(mm['Wq'], 2)} min) y Little; un paso de Euler y el equilibrio D₀."],
         ["7:00 – 9:30", "Demo", "Tres pantallas (Sección 2): el mismo día con y sin sobreturnos, la curva B(k) y la lista de espera."],
         ["9:30 – 11:00", "Resultados", f"Recomendación por escenario ({rec}); por qué gana cada política; sensibilidad al ausentismo; riesgo diario."],
         ["11:00 – 12:00", "Conclusión", "La variabilidad genera la cola: un modelo de medias no alcanza. Medir el ausentismo según la anticipación y simular con datos propios. Limitaciones: datos ficticios, abandono."],
@@ -234,7 +234,7 @@ def generar_entrega(d: Datos, r: dict):
     # ---------------------------------------------------------------- 3. cifras
     doc.add_heading("3. Cifras clave", level=1)
     cifras = [
-        ["Transformada inversa", f"u = {f(tr['u']['atencion'], 4)} → z = {f(tr['z'], 3)} → factor {f(tr['factor'], 4)} → {f(tr['duracion'], 2)} min; paciencia {f(tr['paciencia'], 1)} min"],
+        ["Transformada inversa", f"u = {f(tr['u']['atencion'], 5)} → z = {f(tr['z'], 3)} → factor {f(tr['factor'], 4)} → {f(tr['duracion'], 2)} min; paciencia {f(tr['paciencia'], 1)} min"],
         ["IC del beneficio (R = " + ent(ic_["R"]) + ")", f"k = 2: {pesos(ic_['b2']['media'])} ± {pesos(ic_['b2']['semi'])} (t = {f(ic_['t'], 4)}, S = {pesos(ic_['b2']['S'])})"],
         ["Diferencia pareada", f"+{pesos(ic_['dif']['media'])} ± {pesos(ic_['dif']['semi'])}; correlación {f(ic_['corr'], 3)}; sin pareo ± {pesos(ic_['semiIndep'])}"],
         ["Bonferroni", f"m = {bo['m']}, α/m = {f(bo['alfaInd'], 4)}, t = {f(bo['t'], 4)}; conjunto de óptimos {{{', '.join(str(k) for k in bo['conjunto'])}}}"],
@@ -263,13 +263,13 @@ def generar_entrega(d: Datos, r: dict):
         ("¿Por qué no hay período de calentamiento?",
          "Porque la simulación es terminante: el día empieza vacío a las 08:00 y termina cuando se va el último paciente. No hay régimen estacionario que estimar; la mañana vacía es parte de lo que se mide. Solo la validación contra M/M/c, que compara con fórmulas estacionarias, descarta un período inicial."),
         ("¿Cómo funciona la transformada inversa?",
-         f"Si U es uniforme en (0, 1), F⁻¹(U) tiene distribución F. Para la lognormal: z = Φ⁻¹(u) y x = e^{{μ + σz}}. Con u = {f(tr['u']['atencion'], 4)}, z = {f(tr['z'], 3)} y la consulta dura {f(tr['duracion'], 2)} min. Cada valor consume un solo uniforme, lo que permite los números aleatorios comunes."),
+         f"Si U es uniforme en (0, 1), F⁻¹(U) tiene distribución F. Para la lognormal: z = Φ⁻¹(u) y x = e^{{μ + σz}}. Con u = {f(tr['u']['atencion'], 5)}, z = {f(tr['z'], 3)} y la consulta dura {f(tr['duracion'], 2)} min. Cada valor consume un solo uniforme, lo que permite los números aleatorios comunes."),
         ("¿Por qué la paciencia no es exponencial?",
          f"La exponencial no tiene memoria y su densidad es máxima en cero, así que muchos se irían en los primeros minutos (con media {f(tr['pacMedia'], 0)} min, P(< 20 min) = {pct(1 - math.exp(-20 / tr['pacMedia']), 1)}), algo poco creíble en una sala de espera. Con la lognormal de la misma media y cv {f(tr['pacCv'], 1)}, P(< 20 min) = {pct(pac.cdf(20), 1)}."),
         ("¿Cómo se calcula la espera de una M/M/3? ¿Qué dice Little?",
          f"a = λ/μ = {f(mm['a'], 1)}, ρ = {f(mm['rho'], 4)}; P₀ = 1/(Σaⁿ/n! + a³/(3!(1 − ρ))) = {f(mm['P0'], 4)}; Erlang C = {f(mm['C'], 4)}; Lq = Cρ/(1 − ρ) = {f(mm['Lq'], 3)} y, por Little, Wq = Lq/λ = {f(mm['Wq'], 2)} min. Little, L = λW, vale para cualquier sistema estable y se verificó en un día simulado ({f(li['lambdaW'], 3)} = {f(li['L'], 3)})."),
         ("¿Por qué el criterio es B y no el costo C?",
-         "C trata el ocio como costo pero no premia la consulta ganada. B suma lo que se factura y resta espera, horas extra y pacientes perdidos. No son equivalentes porque las consultas en horas extra cambian la cuenta; C se informa solo como contraste."),
+         "C es la función de costo clásica de la bibliografía de agendamiento (espera + ocio del médico + horas extra + pacientes perdidos). C trata el ocio como costo pero no premia la consulta ganada. B suma lo que se factura y resta espera, horas extra y pacientes perdidos. No son equivalentes porque las consultas en horas extra cambian la cuenta; C se informa solo como contraste."),
         ("¿Por qué el modelo fluido falla?",
          f"Trabaja con medias: si la capacidad media supera la entrada media, predice cola casi nula. La espera la genera la variabilidad, como muestra Pollaczek-Khinchine: la espera simulada es {f(fl[0]['desEspera']['media'] / fl[0]['fluidoEspera'], 1)} veces la del modelo de medias."),
         ("¿Cómo se sabe si un equilibrio es estable?",
